@@ -210,7 +210,7 @@ export default function StoreManager({
               <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-widest text-primary">
                 {s["ST ID"]}
               </span>
-              <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1 transition-opacity">
                 <button
                   onClick={() => {
                     const idx = orgData.findIndex(x => x["ST ID"] === s["ST ID"])

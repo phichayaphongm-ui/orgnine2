@@ -376,24 +376,24 @@ export default function MockSheet({
             </div>
 
             {/* Spreadsheet Grid */}
-            <div className="flex-1 overflow-auto bg-white/50 relative">
+            <div className="flex-1 overflow-auto bg-white/50 relative scrollbar-hide">
                 <div className="min-w-max">
-                    <table className="w-full border-collapse text-sm">
+                    <table className="w-full border-collapse text-[0.75rem] sm:text-sm">
                         <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-md">
                             <tr>
-                                <th className="px-4 py-3 border text-left bg-muted w-10">#</th>
+                                <th className="px-3 sm:px-4 py-3 border text-left bg-muted w-10">#</th>
                                 {activeHeaders.map(h => (
-                                    <th key={h} className="px-4 py-3 border text-left font-semibold text-primary/80 whitespace-nowrap">
+                                    <th key={h} className="px-3 sm:px-4 py-3 border text-left font-semibold text-primary/80 whitespace-nowrap">
                                         {(activeTab === "agm" ? AGM_COLUMN_DISPLAY_NAMES[h] : null) || h}
                                     </th>
                                 ))}
-                                <th className="px-4 py-3 border text-center w-32 sticky right-0 bg-muted/90 backdrop-blur-md shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">Actions</th>
+                                <th className="px-3 sm:px-4 py-3 border text-center w-32 sticky right-0 bg-muted/90 backdrop-blur-md shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {(activeTab === "org" ? filteredOrg : filteredAgm).map((row, idx) => (
                                 <tr key={idx} className="hover:bg-primary/5 group transition-colors">
-                                    <td className="px-4 py-2 border text-center text-muted-foreground font-mono bg-muted/20">{idx + 1}</td>
+                                    <td className="px-3 sm:px-4 py-2 border text-center text-muted-foreground font-mono bg-muted/20">{idx + 1}</td>
                                     {activeHeaders.map(col => {
                                         let cellValue = String(row[col as keyof typeof row] || "");
 
@@ -428,7 +428,7 @@ export default function MockSheet({
                                             />
                                         )
                                     })}
-                                    <td className="px-4 py-2 border text-center sticky right-0 bg-white/95 group-hover:bg-primary/5 transition-colors shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+                                    <td className="px-3 sm:px-4 py-2 border text-center sticky right-0 bg-white/95 group-hover:bg-primary/5 transition-colors shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
                                         <div className="flex items-center justify-center gap-1">
                                             {activeTab === "org" && onReorderOrg && (
                                                 <>
@@ -453,7 +453,7 @@ export default function MockSheet({
                                                     if (activeTab === "org") onDeleteOrg(idx)
                                                     else onDeleteAgm((row as AgmRecord)["AGM Name"])
                                                 }}
-                                                className="p-2 text-destructive opacity-40 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 rounded-lg"
+                                                className="p-2 text-destructive opacity-100 sm:opacity-40 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 rounded-lg"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>

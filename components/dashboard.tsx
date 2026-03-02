@@ -180,7 +180,7 @@ export default function Dashboard({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* ══ HERO SECTION - Clean & Focused ════════════════════════ */}
-      <section className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-2xl px-6 py-12 md:px-10 md:py-16">
+      <section className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-2xl px-6 py-10 md:px-10 md:py-16">
         {/* Abstract Background Decoration */}
         <div className="absolute inset-0 opacity-[0.06] z-0"
           style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
@@ -188,30 +188,30 @@ export default function Dashboard({
         <div className="absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl z-0" />
 
         <div className="relative z-10 flex flex-col items-center text-center max-w-2xl mx-auto">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-[0.7rem] font-black uppercase tracking-[0.25em] text-white/80 backdrop-blur-md border border-white/10">
-            <Globe className="h-4 w-4 text-blue-400" />
+          <div className="mb-4 md:mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 md:px-5 md:py-2 text-[0.6rem] md:text-[0.7rem] font-black uppercase tracking-[0.25em] text-white/80 backdrop-blur-md border border-white/10">
+            <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-400" />
             Organization Intelligence
           </div>
           <h1 className="text-3xl md:text-6xl font-black text-white leading-tight">
-            Talent Experience <br />
+            Talent Experience <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
               Operation Map
             </span>
           </h1>
-          <p className="mt-6 text-slate-400 text-lg font-medium leading-relaxed">
-            ภาพรวมโครงสร้าง แบ่งตามภูมิภาค<br />
-            ยกระดับการบริหารจัดการสาขาด้วยข้อมูลที่แม่นยำและเรียลไทม์
+          <p className="mt-4 md:mt-6 text-slate-400 text-base md:text-lg font-medium leading-relaxed">
+            ภาพรวมโครงสร้าง แบ่งตามภูมิภาค<br className="hidden sm:block" />
+            ยกระดับการบริหารจัดการสาขาด้วยข้อมูลที่แม่นยำ
           </p>
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <div className="mt-8 md:mt-10 flex flex-col sm:flex-row justify-center gap-3 md:gap-4 w-full sm:w-auto px-4 sm:px-0">
             <button
               onClick={() => onNavigate("org")}
-              className="flex items-center gap-2 rounded-2xl bg-white text-slate-900 px-8 py-4 text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white text-slate-900 px-8 py-4 text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10"
             >
               ดูผังองค์กร <ArrowUpRight className="h-4 w-4" />
             </button>
             <button
               onClick={() => onNavigate("data")}
-              className="flex items-center gap-2 rounded-2xl bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-black backdrop-blur-md transition-all hover:bg-white/20"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-black backdrop-blur-md transition-all hover:bg-white/20"
             >
               จัดการข้อมูลสาขา
             </button>
@@ -220,30 +220,31 @@ export default function Dashboard({
       </section>
 
       {/* ══ TEAM & STATISTICS SECTION ══════════════════════════════ */}
-      <section className="group relative overflow-hidden rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-3xl min-h-[650px] md:min-h-[550px] flex flex-col justify-end">
+      <section className="group relative overflow-hidden rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-3xl min-h-[450px] md:min-h-[550px] flex flex-col justify-end">
         {/* Background Image - High Clarity */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 text-center">
           <Image
             src="/images/employees.png"
             alt="Talent Experience Team"
             fill
-            className="object-cover opacity-100 object-[center_20%] transition-transform duration-[3000ms] group-hover:scale-105"
+            className="object-cover opacity-100 object-center md:object-[center_20%] transition-transform duration-[3000ms] group-hover:scale-105"
             priority
           />
           {/* Subtle gradient to ensure stats readability - Lightened on mobile */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent md:from-slate-950 md:via-slate-900/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent md:from-slate-950 md:via-slate-900/40" />
         </div>
 
         {/* Stats Overlay - Premium Glassmorphism */}
-        <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-white/10 bg-slate-950/40 md:bg-slate-950/70 backdrop-blur-xl border-t border-white/10">
+        <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-0 divide-x divide-white/10 bg-slate-950/60 md:bg-slate-950/70 backdrop-blur-xl border-t border-white/10">
           {[
             { val: zoneSummary.length, label: "Zones", sub: "เขตบริหาร", icon: "🌏" },
             { val: allAGMs.length, label: "AGMs", sub: "ผู้บริหารเขต", icon: "👤" },
             { val: orgData.length, label: "Total Stores", sub: "สาขาทั้งหมด", icon: "🏪" },
+            { val: "2026", label: "Fiscal Year", sub: "ปีงบประมาณ", icon: "📅" },
           ].map((s, i) => (
-            <div key={i} className="flex flex-col items-center justify-center py-4 md:py-12 px-4 hover:bg-white/5 transition-all group/stat">
-              <span className="text-2xl md:text-3xl mb-1 md:mb-3 transform transition-transform group-hover/stat:scale-125 duration-500">{s.icon}</span>
-              <p className="text-2xl md:text-5xl font-black text-white tabular-nums drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">{s.val}</p>
+            <div key={i} className={`flex flex-col items-center justify-center py-6 md:py-10 px-4 hover:bg-white/5 transition-all group/stat ${i === 2 ? 'col-span-1' : ''}`}>
+              <span className="text-xl md:text-2xl mb-1 md:mb-2 transform transition-transform group-hover/stat:scale-110 duration-500">{s.icon}</span>
+              <p className="text-2xl md:text-4xl font-black text-white tabular-nums drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">{s.val}</p>
               <p className="text-[0.6rem] md:text-[0.7rem] font-black uppercase tracking-[0.2em] text-white/80 mt-1 md:mt-2">{s.label}</p>
               <p className="text-[0.55rem] md:text-[0.65rem] font-medium text-white/50">{s.sub}</p>
             </div>
@@ -370,32 +371,36 @@ export default function Dashboard({
                     <span className="text-purple-500">AGE GROUP:</span> <span className="text-slate-600">Workforce Maturity</span>
                     <span className="ml-2 text-xs font-black text-orange-500 tabular-nums">({o.ageCount} คน)</span>
                   </p>
-                  <svg viewBox={`-25 -10 ${cW + 50} ${cH + 35}`} className="w-full h-auto">
-                    <defs>
-                      <linearGradient id="overallAgeFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
-                        <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.05" />
-                      </linearGradient>
-                    </defs>
-                    {[0, 0.25, 0.5, 0.75, 1].map((f, i) => (
-                      <line key={i} x1="0" y1={cH - f * (cH - 24)} x2={cW} y2={cH - f * (cH - 24)} stroke="#e2e8f0" strokeWidth="0.5" />
-                    ))}
-                    <path d={aP} fill="url(#overallAgeFill)" />
-                    <path d={lP} fill="none" stroke="#06b6d4" strokeWidth="3" strokeLinejoin="round" />
-                    {pts.map((p, i) => {
-                      const [rng, cnt] = ageE[i]
-                      const is60 = rng === '60+'
-                      return (
-                        <g key={rng}>
-                          <circle cx={p.x} cy={p.y} r="5" fill="white" stroke={is60 ? '#ef4444' : '#06b6d4'} strokeWidth="2.5" />
-                          <text x={p.x} y={p.y - 12} textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'} fontSize="11" fontWeight="900" fill={is60 ? '#ef4444' : '#0e7490'}>
-                            {`${rng}: ${cnt}`}
-                          </text>
-                          <text x={p.x} y={cH + 18} textAnchor="middle" fontSize="10" fill="#94a3b8" fontWeight="700">{rng}</text>
-                        </g>
-                      )
-                    })}
-                  </svg>
+                  <div className="overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="min-w-[400px]">
+                      <svg viewBox={`-25 -10 ${cW + 50} ${cH + 35}`} className="w-full h-auto">
+                        <defs>
+                          <linearGradient id="overallAgeFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
+                            <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.05" />
+                          </linearGradient>
+                        </defs>
+                        {[0, 0.25, 0.5, 0.75, 1].map((f, i) => (
+                          <line key={i} x1="0" y1={cH - f * (cH - 24)} x2={cW} y2={cH - f * (cH - 24)} stroke="#e2e8f0" strokeWidth="0.5" />
+                        ))}
+                        <path d={aP} fill="url(#overallAgeFill)" />
+                        <path d={lP} fill="none" stroke="#06b6d4" strokeWidth="3" strokeLinejoin="round" />
+                        {pts.map((p, i) => {
+                          const [rng, cnt] = ageE[i]
+                          const is60 = rng === '60+'
+                          return (
+                            <g key={rng}>
+                              <circle cx={p.x} cy={p.y} r="5" fill="white" stroke={is60 ? '#ef4444' : '#06b6d4'} strokeWidth="2.5" />
+                              <text x={p.x} y={p.y - 12} textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'} fontSize="11" fontWeight="900" fill={is60 ? '#ef4444' : '#0e7490'}>
+                                {`${rng}: ${cnt}`}
+                              </text>
+                              <text x={p.x} y={cH + 18} textAnchor="middle" fontSize="10" fill="#94a3b8" fontWeight="700">{rng}</text>
+                            </g>
+                          )
+                        })}
+                      </svg>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Right Column: Education + Stability */}
@@ -442,14 +447,15 @@ export default function Dashboard({
               </div>
 
               {/* Footer */}
-              <div className="px-8 py-3 border-t border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-5">
-                  <span className="text-[0.55rem] font-black text-orange-400 uppercase tracking-widest">Key Insights</span>
-                  <span className="text-[0.55rem] text-white/50">1. {parseFloat(fPct) > 50 ? 'Strong Female Leadership' : 'Male Dominant Workforce'}</span>
-                  <span className="text-[0.55rem] text-white/50">2. Core Age {o.coreAge.range} yrs</span>
-                  <span className="text-[0.55rem] text-white/50">3. Avg Service {o.avgService.toFixed(1)} yrs</span>
+              <div className="px-6 md:px-8 py-4 border-t border-white/10 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-6 min-w-max">
+                  <span className="text-[0.6rem] font-black text-orange-400 uppercase tracking-widest flex-shrink-0">Key Insights</span>
+                  <div className="flex items-center gap-4 flex-nowrap">
+                    <span className="text-[0.6rem] text-white/50 whitespace-nowrap">1. {parseFloat(fPct) > 50 ? 'Strong Female Leadership' : 'Male Dominant Workforce'}</span>
+                    <span className="text-[0.6rem] text-white/50 whitespace-nowrap">2. Core Age {o.coreAge.range} yrs</span>
+                    <span className="text-[0.6rem] text-white/50 whitespace-nowrap">3. Avg Service {o.avgService.toFixed(1)} yrs</span>
+                  </div>
                 </div>
-                <span className="text-[0.5rem] font-black text-white/30 uppercase tracking-widest">Talent Experience</span>
               </div>
             </div>
 
@@ -551,32 +557,36 @@ export default function Dashboard({
                         <p className="text-[0.6rem] font-black uppercase tracking-wider mb-1">
                           <span className="text-cyan-500">AGE GROUP:</span> <span className="text-slate-600">Maturity</span>
                         </p>
-                        <svg viewBox={`-20 -10 ${chartW + 40} ${chartH + 35}`} className="w-full h-auto">
-                          <defs>
-                            <linearGradient id={`zFill-${z.zone.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor={accentColor} stopOpacity="0.35" />
-                              <stop offset="100%" stopColor={accentColor} stopOpacity="0.05" />
-                            </linearGradient>
-                          </defs>
-                          {[0, 0.5, 1].map((f, i) => (
-                            <line key={i} x1="0" y1={chartH - f * (chartH - 20)} x2={chartW} y2={chartH - f * (chartH - 20)} stroke="#e2e8f0" strokeWidth="0.5" />
-                          ))}
-                          <path d={areaPath} fill={`url(#zFill-${z.zone.replace(/\s/g, '')})`} />
-                          <path d={linePath} fill="none" stroke={accentColor} strokeWidth="2.5" strokeLinejoin="round" />
-                          {points.map((p, i) => {
-                            const [range, count] = ageEntries[i]
-                            const is60 = range === '60+'
-                            return (
-                              <g key={range}>
-                                <circle cx={p.x} cy={p.y} r="4" fill="white" stroke={is60 ? '#ef4444' : accentColor} strokeWidth="2" />
-                                <text x={p.x} y={p.y - 10} textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'} fontSize="9" fontWeight="900" fill={is60 ? '#ef4444' : '#1e293b'}>
-                                  {`${range}: ${count}`}
-                                </text>
-                                <text x={p.x} y={chartH + 16} textAnchor="middle" fontSize="8" fill="#94a3b8" fontWeight="700">{range}</text>
-                              </g>
-                            )
-                          })}
-                        </svg>
+                        <div className="overflow-x-auto pb-2 scrollbar-hide">
+                          <div className="min-w-[260px]">
+                            <svg viewBox={`-20 -10 ${chartW + 40} ${chartH + 35}`} className="w-full h-auto">
+                              <defs>
+                                <linearGradient id={`zFill-${z.zone.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor={accentColor} stopOpacity="0.35" />
+                                  <stop offset="100%" stopColor={accentColor} stopOpacity="0.05" />
+                                </linearGradient>
+                              </defs>
+                              {[0, 0.5, 1].map((f, i) => (
+                                <line key={i} x1="0" y1={chartH - f * (chartH - 20)} x2={chartW} y2={chartH - f * (chartH - 20)} stroke="#e2e8f0" strokeWidth="0.5" />
+                              ))}
+                              <path d={areaPath} fill={`url(#zFill-${z.zone.replace(/\s/g, '')})`} />
+                              <path d={linePath} fill="none" stroke={accentColor} strokeWidth="2.5" strokeLinejoin="round" />
+                              {points.map((p, i) => {
+                                const [range, count] = ageEntries[i]
+                                const is60 = range === '60+'
+                                return (
+                                  <g key={range}>
+                                    <circle cx={p.x} cy={p.y} r="4" fill="white" stroke={is60 ? '#ef4444' : accentColor} strokeWidth="2" />
+                                    <text x={p.x} y={p.y - 10} textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'} fontSize="9" fontWeight="900" fill={is60 ? '#ef4444' : '#1e293b'}>
+                                      {`${range}: ${count}`}
+                                    </text>
+                                    <text x={p.x} y={chartH + 16} textAnchor="middle" fontSize="8" fill="#94a3b8" fontWeight="700">{range}</text>
+                                  </g>
+                                )
+                              })}
+                            </svg>
+                          </div>
+                        </div>
                       </div>
 
                       {/* EDUCATION */}
@@ -638,21 +648,21 @@ export default function Dashboard({
       })()}
 
       {/* ══ QUICK ACTIONS ═════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {[
           { label: "ผังองค์กร", sub: "Org Chart", icon: LayoutDashboard, page: "org", color: "bg-blue-50 text-blue-600" },
-          { label: "เพิ่มสาขา", sub: "Store Data", icon: Plus, page: "data", color: "bg-emerald-50 text-emerald-600" },
-          { label: "จัดการ AGM", sub: "AGM Manager", icon: Users, page: "agm", color: "bg-amber-50 text-amber-600" },
-          { label: "จัดการฐานข้อมูล", sub: "Internal Sheet", icon: FileSpreadsheet, action: onOpenSheet, color: "bg-purple-50 text-purple-600" },
+          { label: "เพิ่มสาขา", sub: "Store", icon: Plus, page: "data", color: "bg-emerald-50 text-emerald-600" },
+          { label: "AGM", sub: "Manager", icon: Users, page: "agm", color: "bg-amber-50 text-amber-600" },
+          { label: "ฐานข้อมูล", sub: "Sheet", icon: FileSpreadsheet, action: onOpenSheet, color: "bg-purple-50 text-purple-600" },
         ].map((qa) => (
           <button key={qa.label} onClick={() => qa.page ? onNavigate(qa.page as PageId) : qa.action?.()}
-            className="flex flex-col items-center gap-3 rounded-[2rem] glass-card p-6 hover:translate-y-[-4px] transition-all group">
-            <div className={`p-4 rounded-2xl ${qa.color.split(" ")[0]} group-hover:scale-110 transition-transform`}>
-              <qa.icon className={`h-6 w-6 ${qa.color.split(" ")[1]}`} />
+            className="flex flex-col items-center gap-3 rounded-[1.5rem] md:rounded-[2rem] glass-card p-4 md:p-6 hover:translate-y-[-4px] transition-all group">
+            <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${qa.color.split(" ")[0]} group-hover:scale-110 transition-transform`}>
+              <qa.icon className={`h-5 w-5 md:h-6 md:w-6 ${qa.color.split(" ")[1]}`} />
             </div>
             <div className="text-center">
-              <p className="text-sm font-black text-foreground">{qa.label}</p>
-              <p className="text-[0.6rem] font-bold text-muted-foreground uppercase tracking-widest">{qa.sub}</p>
+              <p className="text-xs md:text-sm font-black text-foreground">{qa.label}</p>
+              <p className="text-[0.5rem] md:text-[0.6rem] font-bold text-muted-foreground uppercase tracking-widest">{qa.sub}</p>
             </div>
           </button>
         ))}
