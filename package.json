@@ -43,9 +43,11 @@
     "cmdk": "1.1.1",
     "date-fns": "3.6.0",
     "embla-carousel-react": "8.6.0",
+    "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "input-otp": "1.4.2",
     "jspdf": "^2.5.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.564.0",
     "next": "14.2.15",
     "next-themes": "^0.3.0",
@@ -63,6 +65,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/node": "20.14.9",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",

@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { uploadAndSaveImage } from "@/lib/store"
 import Image from "next/image"
+import { calculateYearOfService } from "@/lib/utils"
 
 interface StoreManagerProps {
   orgData: OrgRecord[]
@@ -58,17 +59,16 @@ export default function StoreManager({
   const filteredStores = useMemo(() => {
     return orgData.filter(s => {
       // 1. AGM Filter
-      if (selectedAgm !== "all" && s["AGM Name"] !== selectedAgm) return false
+      if (selectedAgm !== "all" && s["Line Manager name"] !== selectedAgm) return false
 
       // 2. Search Term
       if (!searchTerm) return true
       const search = searchTerm.toLowerCase()
-      const sid = String(s["Store ID"] || "").toLowerCase()
-      const sthair = String(s["Store Name Thai"] || "").toLowerCase()
-      const seng = String(s["Store Name"] || "").toLowerCase()
-      const agm = String(s["AGM Name"] || "").toLowerCase()
+      const sid = String(s["ST ID"] || "").toLowerCase()
+      const smName = String(s["Store Manager Name"] || "").toLowerCase()
+      const lm = String(s["Line Manager name"] || "").toLowerCase()
 
-      return sid.includes(search) || sthair.includes(search) || seng.includes(search) || agm.includes(search)
+      return sid.includes(search) || smName.includes(search) || lm.includes(search)
     })
   }, [orgData, searchTerm, selectedAgm])
 
@@ -91,9 +91,9 @@ export default function StoreManager({
     if (!e.target.files?.[0] || !editingRow) return
     const file = e.target.files[0]
     try {
-      const refId = editingRow["Store ID"] || "new-store"
+      const refId = editingRow["ST ID"] || "new-store"
       const { url } = await uploadAndSaveImage(file, refId, "store")
-      setEditingRow({ ...editingRow, "Image URL": url })
+      setEditingRow({ ...editingRow, "Store Manager Image URL": url })
     } catch (err) {
       alert("Error uploading image")
     }
@@ -101,22 +101,22 @@ export default function StoreManager({
 
   const openNew = () => {
     setEditingRow({
-      "Store ID": "",
-      "Location Code": "",
-      "Store Name": "",
-      "Store Name Thai": "",
-      "AGM Name": agmData[0]?.["AGM Name"] || "",
-      "AGM ZONE": agmData[0]?.["AGM ZONE"] || "",
-      "GPM Name": "",
+      "ST ID": "",
+      "Title": "",
       "Store Manager Name": "",
-      position: "",
-      "Province": "",
-      "SM Phone": "",
-      "Store Phone": "",
-      "Mobile Phone": "",
-      "Yr of Service in TL": "",
-      "Service in Position": "",
-      "Image URL": "",
+      "Gender": "",
+      "Position (TH)": "",
+      "Mobile": "",
+      "Age": "",
+      "Hi Educ Level": "",
+      "Hiring Date": "",
+      "Year of Service": "",
+      "Line Manager name": agmData[0]?.["AGM Name"] || "",
+      "LM's Position title": "",
+      "Region": agmData[0]?.["AGM ZONE"] || "",
+      "AGM Mobile": "",
+      "AGM Image URL": "",
+      "Store Manager Image URL": "",
     })
     setIsNew(true)
   }
@@ -181,7 +181,7 @@ export default function StoreManager({
               className="rounded-2xl border-none bg-white py-3 pl-4 pr-10 text-sm font-bold shadow-sm appearance-none focus:ring-2 focus:ring-primary/20 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')] bg-[length:1.2em_1.2em] bg-[right_0.75rem_center] bg-no-repeat"
             >
               <option value="all">ทุก AGM</option>
-              {[...new Set(orgData.map(s => s["AGM Name"]).filter(Boolean))].sort().map(name => (
+              {[...new Set(orgData.map(s => s["Line Manager name"]).filter(Boolean))].sort().map(name => (
                 <option key={name} value={name}>{name}</option>
               ))}
             </select>
@@ -208,12 +208,12 @@ export default function StoreManager({
           <div key={i} className="glass-card group flex flex-col p-5 hover-lift bg-white/70">
             <div className="flex items-start justify-between">
               <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-widest text-primary">
-                {s["Store ID"]}
+                {s["ST ID"]}
               </span>
               <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => {
-                    const idx = orgData.findIndex(x => x["Store ID"] === s["Store ID"])
+                    const idx = orgData.findIndex(x => x["ST ID"] === s["ST ID"])
                     if (idx >= 0) openEdit(idx)
                   }}
                   className="p-2 rounded-lg bg-secondary text-primary hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2 px-3"
@@ -225,32 +225,69 @@ export default function StoreManager({
             </div>
 
             <div className="mt-4 flex-1 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl border-2 border-primary/10 overflow-hidden flex-shrink-0 bg-muted">
-                {getImg(s["Image URL"]) ? (
-                  <Image src={getImg(s["Image URL"])!} alt="SM" width={48} height={48} className="object-cover" />
+              <label className="h-12 w-12 rounded-xl border-2 border-primary/10 overflow-hidden flex-shrink-0 bg-muted cursor-pointer relative group/img">
+                {getImg(s["Store Manager Image URL"]) || (s as any)._localImage ? (
+                  <img
+                    src={getImg(s["Store Manager Image URL"]) || (s as any)._localImage}
+                    alt="SM"
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-primary/30">
                     <User className="h-5 w-5" />
                   </div>
                 )}
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-sm font-black text-foreground truncate">{s["Store Name Thai"] || s["Store Name"]}</h4>
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                  <Camera className="h-4 w-4 text-white" />
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    if (!e.target.files?.[0]) return
+                    const file = e.target.files[0]
+                    const idx = orgData.findIndex(x => x["ST ID"] === s["ST ID"])
+                    if (idx < 0) return
+                    try {
+                      const refId = s["ST ID"] || `store-${idx}`
+                      const { url } = await uploadAndSaveImage(file, refId, "store")
+                      await onUpdate(idx, { ...orgData[idx], "Store Manager Image URL": url })
+                    } catch {
+                      alert("อัปโหลดรูปล้มเหลว")
+                    }
+                    e.target.value = ""
+                  }}
+                />
+              </label>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-black text-foreground truncate">{s["Store Manager Name"] || s["Title"]}</h4>
                 <div className="mt-0.5 flex flex-col">
-                  <p className="text-[0.6rem] font-black text-primary/60 uppercase tracking-tighter truncate">Manager: {s["Store Manager Name"] || "N/A"}</p>
-                  <p className="text-[0.65rem] font-medium text-muted-foreground uppercase tracking-widest truncate">{s["AGM Name"]}</p>
+                  <p className="text-[0.6rem] font-black text-primary/60 uppercase tracking-tighter truncate">Position: {s["Position (TH)"] || "N/A"}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="h-5 w-5 rounded-full ring-1 ring-primary/10 overflow-hidden bg-muted flex-shrink-0">
+                      {getImg(s["AGM Image URL"]) ? (
+                        <img src={getImg(s["AGM Image URL"]) || undefined} alt="AGM" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-primary/5 text-[0.5rem] font-bold text-primary/40">
+                          {s["Line Manager name"]?.[0] || "A"}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-widest truncate">{s["Line Manager name"]}</p>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="mt-5 border-t border-dashed border-border pt-4">
               <div className="flex items-center justify-between text-[0.65rem]">
-                <span className="font-bold text-muted-foreground">ตำแหน่ง:</span>
-                <span className="font-black text-primary">{s.position || "N/A"}</span>
+                <span className="font-bold text-muted-foreground">Region:</span>
+                <span className="font-black text-primary">{s["Region"] || "N/A"}</span>
               </div>
               <div className="flex items-center justify-between text-[0.65rem] mt-1">
                 <span className="font-bold text-muted-foreground">อายุงาน:</span>
-                <span className="font-black text-slate-500">{s["Yr of Service in TL"] || "N/A"}</span>
+                <span className="font-black text-slate-500">{calculateYearOfService(s["Hiring Date"]) || s["Year of Service"] || "N/A"}</span>
               </div>
             </div>
           </div>
@@ -283,8 +320,8 @@ export default function StoreManager({
               {/* Image Upload Section */}
               <div className="md:col-span-2 flex flex-col items-center gap-4 py-6 bg-muted/30 rounded-3xl border border-dashed border-border mb-4">
                 <div className="relative h-32 w-32 overflow-hidden rounded-3xl shadow-premium ring-4 ring-primary/10 bg-white">
-                  {getImg(editingRow["Image URL"]) ? (
-                    <Image src={getImg(editingRow["Image URL"])!} alt="Preview" fill className="object-cover" />
+                  {getImg(editingRow["Store Manager Image URL"]) || (editingRow as any)._localImage ? (
+                    <img src={getImg(editingRow["Store Manager Image URL"]) || (editingRow as any)._localImage} alt="Preview" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-muted">
                       <ImageIcon className="h-10 w-10 text-muted-foreground opacity-20" />
@@ -303,38 +340,29 @@ export default function StoreManager({
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Store ID</label>
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">ST ID</label>
                   <input
                     type="text"
-                    value={editingRow["Store ID"]}
-                    onChange={e => setEditingRow({ ...editingRow, "Store ID": e.target.value })}
+                    value={editingRow["ST ID"]}
+                    onChange={e => setEditingRow({ ...editingRow, "ST ID": e.target.value })}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                   />
                 </div>
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">ชื่อสาขา (Thai)</label>
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Title</label>
                   <input
                     type="text"
-                    value={editingRow["Store Name Thai"]}
-                    onChange={e => setEditingRow({ ...editingRow, "Store Name Thai": e.target.value })}
+                    value={editingRow["Title"]}
+                    onChange={e => setEditingRow({ ...editingRow, "Title": e.target.value })}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                   />
                 </div>
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">ชื่อสาขา (Eng)</label>
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Store Manager Name</label>
                   <input
                     type="text"
-                    value={editingRow["Store Name"]}
-                    onChange={e => setEditingRow({ ...editingRow, "Store Name": e.target.value })}
-                    className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
-                  />
-                </div>
-                <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Store Manager</label>
-                  <input
-                    type="text"
-                    value={(editingRow as any)["Store Manager Name"] || ""}
-                    onChange={e => setEditingRow({ ...editingRow, "Store Manager Name": e.target.value } as any)}
+                    value={editingRow["Store Manager Name"] || ""}
+                    onChange={e => setEditingRow({ ...editingRow, "Store Manager Name": e.target.value })}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                     placeholder="ชื่อผู้จัดการสาขา"
                   />
@@ -343,12 +371,12 @@ export default function StoreManager({
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">AGM ผู้ดูแล</label>
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Line Manager</label>
                   <select
-                    value={editingRow["AGM Name"]}
+                    value={editingRow["Line Manager name"] || ""}
                     onChange={e => {
                       const a = agmData.find(x => x["AGM Name"] === e.target.value)
-                      setEditingRow({ ...editingRow, "AGM Name": e.target.value, "AGM ZONE": a?.["AGM ZONE"] || "" })
+                      setEditingRow({ ...editingRow, "Line Manager name": e.target.value, "Region": a?.["AGM ZONE"] || "" })
                     }}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner appearance-none"
                   >
@@ -356,51 +384,30 @@ export default function StoreManager({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">ตำแหน่ง (Position)</label>
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Position (TH)</label>
                   <input
                     type="text"
-                    value={editingRow.position}
-                    onChange={e => setEditingRow({ ...editingRow, position: e.target.value })}
+                    value={editingRow["Position (TH)"] || ""}
+                    onChange={e => setEditingRow({ ...editingRow, "Position (TH)": e.target.value })}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                   />
                 </div>
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">จังหวัด</label>
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Mobile</label>
                   <input
                     type="text"
-                    value={editingRow["Province"]}
-                    onChange={e => setEditingRow({ ...editingRow, "Province": e.target.value })}
-                    className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
-                  />
-                </div>
-                <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">SM Phone</label>
-                  <input
-                    type="text"
-                    value={editingRow["SM Phone"]}
-                    onChange={e => setEditingRow({ ...editingRow, "SM Phone": e.target.value })}
+                    value={editingRow["Mobile"] || ""}
+                    onChange={e => setEditingRow({ ...editingRow, "Mobile": e.target.value })}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                     placeholder="000-000-0000"
                   />
                 </div>
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Store Phone</label>
-                  <input
-                    type="text"
-                    value={editingRow["Store Phone"]}
-                    onChange={e => setEditingRow({ ...editingRow, "Store Phone": e.target.value })}
-                    className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
-                    placeholder="00-000-0000"
-                  />
-                </div>
-                <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">อายุงาน (Yr of Service)</label>
-                  <input
-                    type="text"
-                    value={editingRow["Yr of Service in TL"]}
-                    onChange={e => setEditingRow({ ...editingRow, "Yr of Service in TL": e.target.value })}
-                    className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
-                  />
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">Year of Service (Hiring Date)</label>
+                  <div className="mt-1.5 w-full rounded-2xl border-none bg-muted/30 p-4 text-sm font-bold text-muted-foreground shadow-inner flex justify-between">
+                    <span>{calculateYearOfService(editingRow["Hiring Date"]) || "N/A"}</span>
+                    <span className="text-[0.6rem] opacity-50">Auto-calculated</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -414,7 +421,7 @@ export default function StoreManager({
               </button>
               <button
                 onClick={handleSave}
-                disabled={actionLoading || !editingRow["Store ID"]}
+                disabled={actionLoading || !editingRow["ST ID"]}
                 className="flex-1 rounded-2xl bg-primary py-4 text-sm font-black text-white shadow-xl shadow-primary/20 premium-button disabled:opacity-50"
               >
                 {actionLoading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "บันทึกข้อมูล"}

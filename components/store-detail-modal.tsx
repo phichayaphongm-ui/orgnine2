@@ -1,7 +1,7 @@
 "use client"
 
 import type { OrgRecord } from "@/lib/types"
-import { formatPhone } from "@/lib/utils"
+import { formatPhone, calculateYearOfService } from "@/lib/utils"
 
 interface StoreDetailModalProps {
   store: OrgRecord | null
@@ -12,7 +12,7 @@ interface StoreDetailModalProps {
 export default function StoreDetailModal({ store, imageCache, onClose }: StoreDetailModalProps) {
   if (!store) return null
 
-  let img = store._localImage || store["Image URL"]
+  let img = store._localImage || store["Store Manager Image URL"]
 
   // Resolve localdb protocol
   if (img?.startsWith("localdb://")) {
@@ -21,14 +21,18 @@ export default function StoreDetailModal({ store, imageCache, onClose }: StoreDe
   }
 
   const fields = [
-    { label: "Store ID", value: store["Store ID"] },
-    { label: "Location Code", value: store["Location Code"] },
-    { label: "Store Name Thai", value: store["Store Name Thai"] },
-    { label: "AGM Name", value: store["AGM Name"] },
-    { label: "Position", value: store.position },
-    { label: "Mobile", value: formatPhone(store["Mobile Phone"]) },
-    { label: "Yr of Service TL", value: store["Yr of Service in TL"] },
-    { label: "Service in Pos", value: store["Service in Position"] },
+    { label: "ST ID", value: store["ST ID"] },
+    { label: "Title", value: store["Title"] },
+    { label: "Store Manager Name", value: store["Store Manager Name"] },
+    { label: "Gender", value: store["Gender"] },
+    { label: "Position (TH)", value: store["Position (TH)"] },
+    { label: "Mobile", value: formatPhone(store["Mobile"]) },
+    { label: "Age", value: store["Age"] },
+    { label: "Hi Educ Level", value: store["Hi Educ Level"] },
+    { label: "Hiring Date", value: store["Hiring Date"] },
+    { label: "Year of Service", value: calculateYearOfService(store["Hiring Date"]) || store["Year of Service"] },
+    { label: "Line Manager name", value: store["Line Manager name"] },
+    { label: "Region", value: store["Region"] },
   ]
 
 

@@ -12,20 +12,20 @@ export default function AppFooter() {
                         <div className="flex items-center gap-4">
                             <Image
                                 src="/images/logo.jpg"
-                                alt="Lotus's Logo"
+                                alt="Logo"
                                 width={100}
                                 height={35}
                                 className="h-8 w-auto grayscale opacity-50 transition-all hover:grayscale-0 hover:opacity-100"
                             />
                             <div className="h-4 w-px bg-border hidden sm:block" />
                             <p className="text-xs text-muted-foreground">
-                                © {new Date().getFullYear()} Lotus’s Thailand. All rights reserved.
+                                © {new Date().getFullYear()} Talent Experience. All rights reserved.
                             </p>
                         </div>
 
                         <div className="flex items-center gap-6">
                             <p className="text-[0.7rem] font-medium tracking-wider text-muted-foreground uppercase">
-                                Operation Team | Org-chart System
+                                HR Technology | Org-chart System
                             </p>
                         </div>
                     </div>

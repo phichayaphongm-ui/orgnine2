@@ -52,10 +52,9 @@ export default function AgmManager({
       "AGM Name": "",
       "AGM ZONE": "",
       "Mobile Phone": "",
-      Email: "",
       Remark: "",
       "Image URL": "",
-    })
+    } as AgmRecord)
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,12 +173,13 @@ export default function AgmManager({
                   />
                 </div>
                 <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">เขต (Zone)</label>
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">ภูมิภาค / เขต (Region / Zone)</label>
                   <input
                     type="text"
                     value={editing["AGM ZONE"]}
                     onChange={(e) => setEditing({ ...editing, "AGM ZONE": e.target.value })}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
+                    placeholder="เช่น North Region, South Region"
                   />
                 </div>
                 <div>
@@ -190,15 +190,6 @@ export default function AgmManager({
                     onChange={(e) => setEditing({ ...editing, "Mobile Phone": e.target.value })}
                     className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                     placeholder="000-000-0000"
-                  />
-                </div>
-                <div>
-                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-muted-foreground ml-2">อีเมล (Email)</label>
-                  <input
-                    type="text"
-                    value={editing.Email}
-                    onChange={(e) => setEditing({ ...editing, Email: e.target.value })}
-                    className="mt-1.5 w-full rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                   />
                 </div>
                 <div>

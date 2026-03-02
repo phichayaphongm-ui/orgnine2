@@ -1,4 +1,4 @@
-import { OrgRow, AgmRow } from "./google-apps-script"
+import type { OrgRecord as OrgRow, AgmRecord as AgmRow } from "./types"
 
 const DATABASE_NAME = "OrgChartInternalDB"
 const STORE_NAME = "images"
@@ -86,12 +86,17 @@ export const storageService = {
     deleteOrgRow: (index: number) => {
         const data = storageService.getOrgData()
         if (index >= 0 && index < data.length) {
-            const row = data[index]
-            // If there's an internal image file ID, we should ideally clean it up
-            // But for simplicity in this MVP, we just remove the row
             data.splice(index, 1)
             storageService.saveOrgData(data)
         }
+    },
+
+    reorderOrgRows: (oldIndex: number, newIndex: number) => {
+        const data = storageService.getOrgData()
+        if (oldIndex < 0 || oldIndex >= data.length || newIndex < 0 || newIndex >= data.length) return
+        const [movedItem] = data.splice(oldIndex, 1)
+        data.splice(newIndex, 0, movedItem)
+        storageService.saveOrgData(data)
     },
 
     // AGM DATA
@@ -137,7 +142,14 @@ export const storageService = {
         }
     },
 
-    async getImageBase64(fileId: string): Promise<string | null> {
-        return await getImageFromDB(fileId)
+    getImageBase64: (fileId: string): Promise<string | null> => {
+        return getImageFromDB(fileId)
+    },
+
+    resetAllData: () => {
+        localStorage.removeItem(ORG_DATA_KEY)
+        localStorage.removeItem(AGM_DATA_KEY)
+        // Note: IndexedDB images are kept for now to avoid breaking references
+        // but can be added here if needed.
     }
 }

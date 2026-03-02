@@ -9,8 +9,8 @@ const kanit = Kanit({
 })
 
 export const metadata: Metadata = {
-  title: "Lotus's Operation Team Org-chart",
-  description: "ระบบจัดการ Org Chart และข้อมูลทีมงาน Lotus's Operation Team",
+  title: "Talent Experience",
+  description: "ระบบบริหารจัดการและพัฒนาศักยภาพบุคลากร (HR Technology)",
   robots: "noindex, nofollow",
 }
 

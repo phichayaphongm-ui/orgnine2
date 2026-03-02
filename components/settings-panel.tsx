@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getSettings, isConfigured, bulkImportToGas } from "@/lib/google-apps-script"
 import { storageService } from "@/lib/storage-service"
-import { Settings, CheckCircle2, AlertCircle, Download, Upload, Trash2, CloudSync, Globe, Loader2 } from "lucide-react"
+import { Settings, CheckCircle2, AlertCircle, Download, Upload, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface SettingsPanelProps {
@@ -14,8 +13,6 @@ interface SettingsPanelProps {
 
 export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelProps) {
   const [stats, setStats] = useState({ orgCount: 0, agmCount: 0 })
-  const [webAppUrl, setWebAppUrl] = useState("")
-  const [isSyncing, setIsSyncing] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -25,49 +22,8 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
         orgCount: orgData.length,
         agmCount: agmData.length
       })
-      const { webAppUrl: savedUrl } = getSettings()
-      setWebAppUrl(savedUrl || "")
     }
   }, [open])
-
-  function handleSaveUrl() {
-    localStorage.setItem("ORG_CHART_SETTINGS", JSON.stringify({ webAppUrl }))
-    toast.success("บันทึก URL สำเร็จ")
-    onSave()
-  }
-
-  async function handleCloudSync() {
-    if (!webAppUrl) {
-      toast.error("กรุณาใส่ Web App URL")
-      return
-    }
-    if (!confirm("คุณต้องการส่งข้อมูลทั้งหมดในเครื่องไปที่ Google Sheets ใช่หรือไม่? (รูปภาพจะถูกส่งไปเป็น Base64 ขนาดเล็ก)")) return
-
-    setIsSyncing(true)
-    try {
-      const rawOrgData = storageService.getOrgData()
-
-      // Convert localdb:// URLs to Base64 before sending to GAS
-      const processedOrgData = await Promise.all(rawOrgData.map(async (row) => {
-        if (row["Image URL"]?.startsWith("localdb://")) {
-          const imageId = row["Image URL"].replace("localdb://", "")
-          const base64 = await storageService.getImageBase64(imageId)
-          if (base64) {
-            return { ...row, "Image URL": base64 }
-          }
-        }
-        return row
-      }))
-
-      await bulkImportToGas(processedOrgData)
-      toast.success("Sync ข้อมูลสำเร็จ")
-    } catch (err) {
-      console.error("Sync failed:", err)
-      toast.error("Sync ล้มเหลว")
-    } finally {
-      setIsSyncing(false)
-    }
-  }
 
   function handleExport() {
     const data = {
@@ -79,7 +35,7 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `org-chart-backup-${new Date().toISOString().split('T')[0]}.json`
+    a.download = `talent-experience-backup-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
     toast.success("ส่งออกข้อมูลสำเร็จ")
@@ -121,8 +77,6 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
 
   if (!open) return null
 
-  const configured = isConfigured()
-
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
@@ -138,53 +92,15 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
         </div>
 
         <div className="space-y-5 p-6 max-h-[80vh] overflow-y-auto">
-          {/* Cloud Config */}
-          <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
-            <h4 className="flex items-center gap-2 text-[0.65rem] font-black uppercase tracking-widest text-primary">
-              <Globe className="h-3.5 w-3.5" />
-              เชื่อมต่อ Google Sheets (Cloud Mode)
-            </h4>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Google Web App URL..."
-                value={webAppUrl}
-                onChange={(e) => setWebAppUrl(e.target.value)}
-                className="flex-1 rounded-xl border-none bg-white px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                onClick={handleSaveUrl}
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-colors"
-              >
-                บันทึก
-              </button>
-            </div>
-            {configured && (
-              <button
-                disabled={isSyncing}
-                onClick={handleCloudSync}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2ec4a9] py-3 text-sm font-bold text-white shadow-lg shadow-emerald-200 hover:bg-[#28ad95] transition-all active:scale-95 disabled:opacity-50"
-              >
-                {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudSync className="h-4 w-4" />}
-                ส่งข้อมูลเข้า Cloud (Sync to Sheet)
-              </button>
-            )}
-            <p className="text-[0.6rem] text-muted-foreground leading-tight italic">
-              * วาง URL จากการ Deploy Google Apps Script ครั้งล่าสุด เพื่อให้ข้อมูลซิงค์กันแบบ Real-time
-            </p>
-          </div>
-
-          <div className="h-px bg-border/50" />
-
           {/* Status */}
-          <div className={`flex items-center gap-3 rounded-xl border p-4 ${configured ? "border-[#2ec4a9]/30 bg-[#e6faf7]" : "border-blue-200 bg-blue-50"}`}>
-            <CheckCircle2 className={`h-5 w-5 shrink-0 ${configured ? "text-[#2ec4a9]" : "text-blue-500"}`} />
+          <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
             <div>
               <p className="text-sm font-semibold text-foreground">
-                {configured ? "เปิดใช้งานระบบ Cloud (GAS connected)" : "โหมดทำงานในเครื่อง (Local Mode)"}
+                โหมดทำงานแบบออฟไลน์ (Standalone Mode)
               </p>
               <p className="text-xs text-muted-foreground">
-                {configured ? "ข้อมูลจะถูกส่งไปยัง Google Sheets (Base64 Mode)" : "ข้อมูลถูกบันทึกไว้ใน Browser ของคุณเท่านั้น"}
+                ข้อมูลถูกบันทึกไว้ใน Browser ของคุณอย่างปลอดภัย
               </p>
             </div>
           </div>
@@ -201,21 +117,23 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
             </div>
           </div>
 
+          <div className="h-px bg-border/50" />
+
           {/* Local Storage Actions */}
           <div className="space-y-3">
-            <p className="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground px-1">จัดการไฟล์สำรอง</p>
+            <p className="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground px-1">จัดการข้อมูลสำรอง</p>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleExport}
                 className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-[0.7rem] font-bold transition-all hover:bg-secondary hover:border-primary/30"
               >
                 <Download className="h-4 w-4" />
-                EXPORT
+                ส่งออก (EXPORT)
               </button>
 
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-[0.7rem] font-bold transition-all hover:bg-secondary hover:border-primary/30">
                 <Upload className="h-4 w-4" />
-                IMPORT
+                นำเข้า (IMPORT)
                 <input type="file" accept=".json" onChange={handleImport} className="hidden" />
               </label>
             </div>
@@ -225,17 +143,17 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 py-3 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10"
             >
               <Trash2 className="h-4 w-4" />
-              ล้างข้อมูลในฐานข้อมูล (RESET)
+              ล้างข้อมูลทั้งหมด (RESET)
             </button>
           </div>
 
           <div className="rounded-xl bg-accent/5 p-4 border border-dashed border-accent/20">
             <p className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-wider">
               <AlertCircle className="h-3.5 w-3.5 text-accent" />
-              Note
+              คำแนะนำ
             </p>
             <p className="mt-1 text-[0.65rem] text-muted-foreground leading-relaxed">
-              หากไม่ได้เชื่อมต่อ Cloud ข้อมูลจะถูกเก็บไว้ในเครื่องเท่านั้น แนะนำให้ทำ Export สำรองไฟล์ไว้เป็นระยะเพื่อป้องกันข้อมูลสูญหายจากการล้าง Browser Cache
+              เนื่องจากแอปทำงานแบบ Local ข้อมูลจะถูกเก็บไว้ในเครื่องเท่านั้น แนะนำให้ทำ Export สำรองไฟล์ไว้เป็นระยะเพื่อความปลอดภัยของข้อมูล
             </p>
           </div>
         </div>

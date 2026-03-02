@@ -25,7 +25,7 @@ export default function ProvinceDetailModal({
         return url
     }
 
-    const stores = orgData.filter((s) => s.Province === province)
+    const stores = orgData.filter((s) => (s as any).Province === province || s["Region"] === province)
 
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center md:items-center p-0 md:p-12 animate-in fade-in duration-300">
@@ -52,9 +52,9 @@ export default function ProvinceDetailModal({
                 {/* Modal Content - Store List */}
                 <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-4">
                     {stores.map((store, idx) => {
-                        const agm = agmData.find((a) => a["AGM Name"] === store["AGM Name"])
+                        const agm = agmData.find((a) => a["AGM Name"] === store["Line Manager name"])
                         const agmImg = agm ? getImg(agm["Image URL"]) : null
-                        const storeImg = getImg(store["Image URL"])
+                        const storeImg = getImg(store["Store Manager Image URL"])
 
                         return (
                             <div
@@ -70,7 +70,7 @@ export default function ProvinceDetailModal({
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-base md:text-lg font-black text-slate-900 leading-tight">{store["Store Name"]}</p>
+                                        <p className="text-base md:text-lg font-black text-slate-900 leading-tight">{store["Store Manager Name"] || store["ST ID"]}</p>
                                         <div className="mt-1 flex flex-col">
                                             <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Manager</p>
                                             <p className="text-[0.75rem] md:text-xs font-bold text-slate-600">{store["Store Manager Name"] || "N/A"}</p>
@@ -85,11 +85,11 @@ export default function ProvinceDetailModal({
                                         </div>
                                     ) : (
                                         <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-[0.6rem] font-black text-slate-400 flex-shrink-0">
-                                            {store["AGM Name"]?.[0]}
+                                            {store["Line Manager name"]?.[0]}
                                         </div>
                                     )}
                                     <div>
-                                        <p className="text-[0.65rem] font-black text-slate-700 leading-none">{store["AGM Name"]}</p>
+                                        <p className="text-[0.65rem] font-black text-slate-700 leading-none">{store["Line Manager name"]}</p>
                                         <p className="text-[0.55rem] font-bold text-slate-400 uppercase mt-0.5 whitespace-nowrap">AGM Level</p>
                                     </div>
                                 </div>

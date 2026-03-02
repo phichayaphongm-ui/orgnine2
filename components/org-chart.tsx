@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Building2,
 } from "lucide-react"
-import { formatPhone } from "@/lib/utils"
+import { formatPhone, calculateYearOfService } from "@/lib/utils"
 
 interface OrgChartProps {
   orgData: OrgRecord[]
@@ -45,8 +45,13 @@ export default function OrgChart({
   const tree = useMemo(() => {
     const regionMap: Record<string, Record<string, OrgRecord[]>> = {}
     orgData.forEach(r => {
-      const region = r["AGM ZONE"] || "Unknown Region"
-      const agm = r["AGM Name"] || "Unknown AGM"
+      const region = r["Region"]
+      const agm = r["Line Manager name"]
+      const sid = r["ST ID"]
+
+      // Condition: Must have Line Manager name, Region, and ST ID to be in the chart
+      if (!region || !agm || !sid) return
+
       if (!regionMap[region]) regionMap[region] = {}
       if (!regionMap[region][agm]) regionMap[region][agm] = []
       regionMap[region][agm].push(r)
@@ -71,8 +76,14 @@ export default function OrgChart({
     return result
   }, [tree, selectedZone, selectedAgm])
 
-  const allRegions = useMemo(() => [...new Set(orgData.map(s => s["AGM ZONE"]).filter(Boolean))].sort(), [orgData])
-  const allAgms = useMemo(() => [...new Set(orgData.map(s => s["AGM Name"]).filter(Boolean))].sort(), [orgData])
+  const allRegions = useMemo(() => Object.keys(tree).sort(), [tree])
+  const allAgms = useMemo(() => {
+    const agms = new Set<string>()
+    Object.values(tree).forEach(regionAgms => {
+      Object.keys(regionAgms).forEach(agm => agms.add(agm))
+    })
+    return [...agms].sort()
+  }, [tree])
   const filteredStores = useMemo(() => Object.values(filteredTree).flatMap(a => Object.values(a).flat()), [filteredTree])
   const totalVisible = filteredStores.length
 
@@ -84,15 +95,16 @@ export default function OrgChart({
   const toggleAgm = (agm: string) =>
     setCollapsedAgms(prev => { const n = new Set(prev); n.has(agm) ? n.delete(agm) : n.add(agm); return n })
 
-  const getImg = (url?: string) => {
+  const getImg = (url?: string, record?: OrgRecord | AgmRecord) => {
+    if (record?._localImage) return record._localImage
     if (!url) return null
     return url.startsWith("localdb://") ? imageCache[url.replace("localdb://", "")] || null : url
   }
 
   /* ─── Region style config ──────────────────────────────────── */
   const regionCfg: Record<string, { gradient: string; accent: string; icon: string; label: string }> = {
-    "North - H": { gradient: "from-sky-600 to-blue-800", accent: "bg-sky-500", icon: "🧭", label: "ภาคเหนือ / North Zone" },
-    "South - H": { gradient: "from-emerald-500 to-teal-800", accent: "bg-emerald-500", icon: "🏝️", label: "ภาคใต้ / South Zone" },
+    "Hyper Operations - North Region": { gradient: "from-sky-600 to-blue-800", accent: "bg-sky-500", icon: "🧭", label: "ภาคเหนือ / North Region" },
+    "Hyper Operations - South Region": { gradient: "from-emerald-500 to-teal-800", accent: "bg-emerald-500", icon: "🏝️", label: "ภาคใต้ / South Region" },
   }
 
   return (
@@ -130,9 +142,13 @@ export default function OrgChart({
             className="rounded-2xl border-none bg-white py-3 pl-4 pr-8 text-sm font-bold shadow-sm appearance-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="all">ทุก AGM ({allAgms.length})</option>
-            {allAgms.map(agm => (
-              <option key={agm} value={agm}>{agm} ({orgData.filter(s => s["AGM Name"] === agm).length} สาขา)</option>
-            ))}
+            {allAgms.map(agm => {
+              const count = Object.values(filteredTree).reduce((acc, regionAgms) => acc + (regionAgms[agm]?.length || 0), 0)
+              if (count === 0) return null
+              return (
+                <option key={agm} value={agm}>{agm} ({count} สาขา)</option>
+              )
+            })}
           </select>
         </div>
 
@@ -189,7 +205,7 @@ export default function OrgChart({
               <div className="space-y-10">
                 {Object.entries(agms).sort().map(([agmName, stores]) => {
                   const agmRec = agmData.find(a => a["AGM Name"] === agmName)
-                  const agmImg = getImg(agmRec?.["Image URL"])
+                  const agmImg = getImg(agmRec?.["Image URL"], agmRec)
                   const isCollapsed = collapsedAgms.has(agmName)
 
                   return (
@@ -198,20 +214,24 @@ export default function OrgChart({
                       <div className="flex flex-col items-center">
                         <div className={`glass-card border-2 border-amber-300/60 bg-gradient-to-br from-white to-amber-50 shadow-xl text-center transition-all hover:border-amber-400/80 p-6 w-60`}>
                           {/* AGM Photo */}
-                          <div className={`relative mx-auto overflow-hidden rounded-2xl border-4 border-amber-200 shadow-lg h-24 w-24 mb-4`}>
+                          <div className={`relative mx-auto overflow-hidden rounded-2xl border-4 border-amber-200 shadow-lg h-24 w-24 mb-4 bg-white`}>
                             {agmImg ? (
-                              <Image src={agmImg} alt={agmName} fill className="object-cover" />
+                              <img src={agmImg} alt={agmName} className="h-full w-full object-cover" />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 to-amber-100">
                                 <User className={`text-amber-300 h-10 w-10`} />
                               </div>
                             )}
                           </div>
-                          {/* AGM label */}
-                          <p className={`font-black text-amber-700 uppercase tracking-widest text-[0.55rem] mb-1.5`}>Area General Manager</p>
-                          <h4 className={`font-black text-foreground leading-snug text-sm`}>{agmName}</h4>
+                          {/* 1. Name */}
+                          <h4 className={`font-black text-foreground leading-snug text-sm mb-1.5`}>{agmName}</h4>
+                          {/* 2. Position */}
+                          <p className={`font-black text-amber-700 uppercase tracking-widest text-[0.55rem] mb-1.5`}>
+                            {agmRec?.Position || "Area General Manager"}
+                          </p>
+                          {/* 3. Mobile Phone */}
                           {agmRec?.["Mobile Phone"] && (
-                            <div className={`flex items-center justify-center gap-1 text-amber-600 mt-2`}>
+                            <div className={`flex items-center justify-center gap-1 text-amber-600 mt-1`}>
                               <Phone className={"h-3.5 w-3.5"} />
                               <span className={`font-bold text-xs`}>{formatPhone(agmRec?.["Mobile Phone"])}</span>
                             </div>
@@ -236,14 +256,17 @@ export default function OrgChart({
                         <div className="relative">
                           {/* Horizontal bar across all SM cards */}
                           {stores.length > 1 && (
-                            <div className="absolute top-0 left-[4%] right-[4%] h-0.5 bg-gradient-to-r from-transparent via-border to-transparent" />
+                            <div className="absolute -top-3 left-[4%] right-[4%] h-0.5 bg-gradient-to-r from-transparent via-border to-transparent" />
                           )}
 
                           <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pt-3`}>
-                            {stores.sort((a, b) => (a["Store Name"] || "").localeCompare(b["Store Name"] || "")).map((s, idx) => {
-                              const smImg = getImg(s["Image URL"])
+                            {stores.sort((a, b) => (a["Store Manager Name"] || "").localeCompare(b["Store Manager Name"] || "")).map((s, idx) => {
+                              const smImgRaw = getImg(s["Store Manager Image URL"], s)
                               const smName = s["Store Manager Name"] || ""
-                              const storeName = s["Store Name Thai"] || s["Store Name"] || ""
+                              const storeName = s["Title"] || ""
+
+                              // Aggressive cleanse: if SM image is identical to AGM image but they are different people, it's a data pollution bug
+                              const smImg = (smImgRaw && smImgRaw === agmImg && smName.trim() !== agmName.trim()) ? null : smImgRaw
 
                               return (
                                 <div
@@ -255,9 +278,9 @@ export default function OrgChart({
                                   <div className="absolute -top-3 left-1/2 w-0.5 h-3 bg-border -translate-x-1/2" />
 
                                   {/* ─ Level 3: Store Manager photo ─ */}
-                                  <div className={`relative overflow-hidden border-2 border-emerald-200 bg-muted/30 h-20 w-20 rounded-2xl mb-2.5`}>
+                                  <div className={`relative overflow-hidden border-2 border-emerald-200 bg-muted/30 h-20 w-20 rounded-2xl mb-2.5 bg-white`}>
                                     {smImg ? (
-                                      <Image src={smImg} alt={smName || storeName} fill className="object-cover group-hover:scale-105 transition-transform" />
+                                      <img src={smImg || ""} alt={storeName} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
                                     ) : (
                                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-slate-50">
                                         <User className={`text-emerald-200 h-10 w-10`} />
@@ -265,64 +288,60 @@ export default function OrgChart({
                                     )}
                                   </div>
 
-                                  {/* ─ Level 3 label: SM Name ─ */}
+                                  {/* ─ 1. Name ─ */}
                                   {smName ? (
-                                    <p className={`font-black text-foreground group-hover:text-emerald-700 transition-colors leading-tight w-full truncate text-[0.72rem]`}>
+                                    <p className={`font-black text-slate-800 group-hover:text-emerald-700 transition-colors leading-tight w-full truncate text-[0.8rem]`}>
                                       {smName}
                                     </p>
                                   ) : (
-                                    <p className={`italic text-muted-foreground/50 w-full truncate text-[0.65rem]`}>— SM —</p>
+                                    <p className={`italic text-muted-foreground/50 w-full truncate text-[0.7rem]`}>— SM —</p>
                                   )}
 
-                                  {/* SM Phone */}
-                                  {(s["SM Phone"] || s["Mobile Phone"]) && (
-                                    <div className={`flex items-center justify-center gap-0.5 text-emerald-600/80 mt-1`}>
-                                      <Phone className={"h-2.5 w-2.5"} />
-                                      <span className={`font-bold text-[0.58rem]`}>
-                                        {formatPhone(s["SM Phone"] || s["Mobile Phone"])}
+                                  {/* ─ 2. Position ─ */}
+                                  {s["Position (TH)"] && (
+                                    <p className={`w-full text-[0.65rem] text-slate-500 font-bold mt-1.5 leading-snug line-clamp-2`}>
+                                      {s["Position (TH)"]}
+                                    </p>
+                                  )}
+
+                                  {/* ─ 3. Mobile ─ */}
+                                  {s["Mobile"] && (
+                                    <div className={`flex items-center justify-center gap-1 text-emerald-600 mt-1.5`}>
+                                      <Phone className={"h-3 w-3"} />
+                                      <span className={`font-bold text-[0.7rem]`}>
+                                        {formatPhone(s["Mobile"])}
                                       </span>
                                     </div>
                                   )}
 
-                                  {/* Divider */}
-                                  <div className={`w-full border-t border-dashed border-border my-1.5`} />
-
-                                  {/* ─ Level 4: Store Name ─ */}
-                                  <div className={`flex items-center gap-1 w-full justify-start`}>
-                                    <Building2 className={`flex-shrink-0 text-slate-400 h-3 w-3`} />
-                                    <span className={`font-black text-slate-600 truncate leading-tight text-[0.65rem]`}>
-                                      {storeName}
-                                    </span>
-                                  </div>
-
-                                  {/* Position & Service Year */}
-                                  {(s.position || s["Yr of Service in TL"]) && (
-                                    <div className="w-full text-left mt-1 overflow-hidden">
-                                      {s.position && (
-                                        <p className={`text-slate-500 font-bold truncate text-[0.55rem]`}>
-                                          {s.position}
-                                        </p>
-                                      )}
-                                      {s["Yr of Service in TL"] && (
-                                        <p className={`text-primary/70 font-black truncate text-[0.5rem] uppercase tracking-tighter`}>
-                                          Exp: {s["Yr of Service in TL"]}
-                                        </p>
-                                      )}
-                                    </div>
+                                  {/* ─ 4. Age ─ */}
+                                  {s.Age && (
+                                    <p className={`w-full truncate text-[0.65rem] mt-1.5 ${parseInt(s.Age) >= 60 ? 'text-red-600 font-black' : 'text-slate-600 font-bold'}`}>
+                                      อายุ: {s.Age}
+                                    </p>
                                   )}
 
-                                  {/* Store ID + Province */}
-                                  <div className={`flex items-center justify-between w-full mt-1.5`}>
-                                    <span className={`rounded bg-primary/10 text-primary font-black px-1 text-[0.55rem] py-0.5`}>
-                                      #{s["Store ID"]}
-                                    </span>
-                                    {s["Province"] && (
-                                      <div className="flex items-center gap-0.5 text-muted-foreground/60">
-                                        <MapPin className="h-2.5 w-2.5" />
-                                        <span className="text-[0.5rem] font-medium">{s["Province"]}</span>
-                                      </div>
-                                    )}
-                                  </div>
+                                  {/* ─ 5. Tenure / Year of Service ─ */}
+                                  {s["Hiring Date"] && (() => {
+                                    const yos = calculateYearOfService(s["Hiring Date"])
+                                    return yos ? (
+                                      <p className={`w-full truncate text-[0.65rem] text-slate-600 font-bold mt-0.5`}>
+                                        อายุงาน: {yos}
+                                      </p>
+                                    ) : null
+                                  })()}
+
+                                  {/* Spacer to push ST ID to bottom if card grows */}
+                                  <div className="flex-1 min-h-[8px]"></div>
+
+                                  {/* ─ 6. ST ID ─ */}
+                                  {s["ST ID"] && (
+                                    <div className={`w-full border-t border-slate-100 pt-2 mt-1`}>
+                                      <p className={`w-full truncate text-[0.8rem] text-blue-600 font-black tracking-widest`}>
+                                        #{s["ST ID"]}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                               )
                             })}

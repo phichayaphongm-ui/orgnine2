@@ -6,6 +6,7 @@ import {
   subscribe,
   getState,
   loadAllData,
+  loadExcelFromFile,
   addRow,
   updateRow,
   deleteRow,
@@ -15,7 +16,6 @@ import {
   getImageFromCache,
   uploadAndSaveImage,
 } from "@/lib/store"
-import { isConfigured } from "@/lib/google-apps-script"
 import AppHeader from "@/components/app-header"
 import Dashboard from "@/components/dashboard"
 import OrgChart from "@/components/org-chart"
@@ -27,7 +27,9 @@ import MockSheet from "@/components/mock-sheet"
 import ProvinceDetailModal from "@/components/province-detail-modal"
 import LoginPage from "@/components/login-page"
 import AppFooter from "@/components/app-footer"
-import { Loader2, Settings, Wifi, WifiOff } from "lucide-react"
+import { saveAs } from "file-saver"
+import { Loader2, Settings, FileUp } from "lucide-react"
+import { calculateYearOfService } from "@/lib/utils"
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
@@ -46,17 +48,14 @@ export default function Home() {
   // Load on mount
   useEffect(() => {
     setMounted(true)
-    const auth = localStorage.getItem("lotus_auth")
+    const auth = localStorage.getItem("te_auth")
     setIsAuthenticated(auth === "true")
-    if (isConfigured()) {
-      loadAllData()
-    }
+    loadAllData()
   }, [])
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem("lotus_auth")
-    setIsAuthenticated(false)
-    showToast("ออกจากระบบแล้ว")
+    localStorage.removeItem("te_auth")
+    window.location.reload()
   }, [])
 
   function showToast(msg: string, type: "ok" | "err" = "ok") {
@@ -124,8 +123,21 @@ export default function Home() {
     setActionLoading(false)
   }, [])
 
-  // Export handlers
+  const handleExcelUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setActionLoading(true)
+    try {
+      const count = await loadExcelFromFile(file)
+      showToast(`โหลดข้อมูลจาก Excel สำเร็จ ${count} รายการ`)
+    } catch {
+      showToast("อ่านไฟล์ Excel ล้มเหลว", "err")
+    }
+    setActionLoading(false)
+    e.target.value = "" // Reset file input
+  }, [])
 
+  // Export handlers
   const handleExportPptx = useCallback(async () => {
     const PptxGenJS = (await import("pptxgenjs")).default
     const pptx = new PptxGenJS()
@@ -137,23 +149,29 @@ export default function Home() {
 
     const groups: Record<string, { zone: string; stores: OrgRecord[] }> = {}
     exportData.forEach((r) => {
-      const k = r["AGM Name"] || "N/A"
-      if (!groups[k]) groups[k] = { zone: r["AGM ZONE"] || "", stores: [] }
+      const k = r["Line Manager name"] || "N/A"
+      if (!groups[k]) groups[k] = { zone: r["Region"] || "", stores: [] }
       groups[k].stores.push(r)
     })
 
-    // Helper: Resolve Base64
     const getBase64 = (url?: string) => {
       if (!url) return null
       if (url.startsWith("localdb://")) return imageCache[url.replace("localdb://", "")] || null
       if (url.startsWith("data:")) return url
-      return null // We can't easily fetch external non-base64 without proxy
+      return null
     }
 
-    // Title slide
+    const fmtPhone = (raw?: string): string => {
+      if (!raw) return ""
+      let digits = raw.replace(/\D/g, "")
+      if (digits.length === 9) digits = "0" + digits
+      if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+      return raw
+    }
+
     const ts = pptx.addSlide()
     ts.background = { color: "1e40af" }
-    ts.addText("Lotus's Thailand\nOperation Team Org-chart", {
+    ts.addText("Talent Experience\nHR Intelligence Portal", {
       x: 0, y: 1.5, w: "100%", h: 2,
       fontSize: 36, fontFace: "Kanit", color: "FFFFFF", bold: true, align: "center",
     })
@@ -162,85 +180,167 @@ export default function Home() {
       fontSize: 16, fontFace: "Kanit", color: "e2e8f0", align: "center",
     })
 
+    const GRID_X = 2.75
+    const GRID_Y = 0.1
+    const GRID_W = 7.1
+    const GRID_H = 5.4
+    const GAP = 0.06
+
     for (const [agmName, grp] of Object.entries(groups)) {
       const slide = pptx.addSlide()
       slide.background = { color: "F8FAFC" }
+      const agmRec = agmMap[agmName]
+      const n = grp.stores.length
 
-      // AGM Sidebar
       slide.addShape(pptx.ShapeType.roundRect, {
-        x: 0.2, y: 0.2, w: 2.4, h: 5.2,
+        x: 0.15, y: 0.15, w: 2.45, h: 5.3,
         fill: { type: "solid", color: "1e40af" }, rectRadius: 0.1,
       })
-
-      const agmRec = agmMap[agmName]
       const agmPic = getBase64(agmRec?.["Image URL"])
       if (agmPic) {
-        slide.addImage({ data: agmPic, x: 0.6, y: 0.5, w: 1.6, h: 1.6, rounding: true })
+        slide.addImage({ data: agmPic, x: 0.55, y: 0.4, w: 1.65, h: 1.65, rounding: true })
       } else {
-        slide.addShape(pptx.ShapeType.ellipse, { x: 0.6, y: 0.5, w: 1.6, h: 1.6, fill: { color: "3b82f6" } })
+        slide.addShape(pptx.ShapeType.ellipse, { x: 0.55, y: 0.4, w: 1.65, h: 1.65, fill: { color: "3b82f6" } })
       }
-
       slide.addText("Area General Manager", {
-        x: 0.2, y: 2.3, w: 2.4, h: 0.3,
-        fontSize: 9, fontFace: "Kanit", color: "FFFFFF", bold: true, align: "center",
+        x: 0.15, y: 2.15, w: 2.45, h: 0.25,
+        fontSize: 8.5, fontFace: "Kanit", color: "93c5fd", bold: true, align: "center",
       })
       slide.addText(agmName, {
-        x: 0.3, y: 2.7, w: 2.2, h: 0.6,
-        fontSize: 14, fontFace: "Kanit", color: "FFFFFF", bold: true, align: "center", valign: "middle",
+        x: 0.15, y: 2.45, w: 2.45, h: 0.55,
+        fontSize: 13, fontFace: "Kanit", color: "FFFFFF", bold: true, align: "center", valign: "middle", wrap: true,
       })
+      const agmPosition = agmRec?.Position || ""
+      if (agmPosition) {
+        slide.addText(agmPosition, {
+          x: 0.15, y: 3.05, w: 2.45, h: 0.35,
+          fontSize: 8, fontFace: "Kanit", color: "bfdbfe", align: "center", wrap: true,
+        })
+      }
       slide.addText(grp.zone, {
-        x: 0.3, y: 3.3, w: 2.2, h: 0.3,
-        fontSize: 10, fontFace: "Kanit", color: "e2e8f0", align: "center",
+        x: 0.15, y: 3.45, w: 2.45, h: 0.4,
+        fontSize: 9, fontFace: "Kanit", color: "e2e8f0", align: "center", wrap: true,
+      })
+      const agmPhone = fmtPhone(agmRec?.["Mobile Phone"])
+      if (agmPhone) {
+        slide.addText(`📞 ${agmPhone}`, {
+          x: 0.15, y: 3.9, w: 2.45, h: 0.3,
+          fontSize: 9, fontFace: "Kanit", color: "93c5fd", align: "center",
+        })
+      }
+      slide.addText(`${n} สาขา`, {
+        x: 0.15, y: 4.85, w: 2.45, h: 0.3,
+        fontSize: 10, fontFace: "Kanit", color: "fbbf24", bold: true, align: "center",
       })
 
-      // Stores Grid
-      const stores = grp.stores
-      const cols = 5
-      const cardW = 1.35
-      const cardH = 1.6
-      const startX = 2.8
-      const startY = 0.2
+      let cols = Math.min(n, 5)
+      let rows = Math.ceil(n / cols)
+      if (rows > 4) { cols = Math.min(n, 6); rows = Math.ceil(n / cols) }
+      if (rows > 4) { cols = Math.min(n, 7); rows = Math.ceil(n / cols) }
 
-      stores.forEach((s, i) => {
+      const cardW = (GRID_W - (cols - 1) * GAP) / cols
+      const cardH = (GRID_H - (rows - 1) * GAP) / rows
+      const scale = Math.min(cardH / 2.7, 1)
+      const imgSize = Math.min(0.65 * scale, 0.65)
+      const fName = Math.max(5, 7 * scale)
+      const fPos = Math.max(4, 5 * scale)
+      const fStore = Math.max(4, 5.5 * scale)
+      const fPhone = Math.max(3.5, 5 * scale)
+      const fInfo = Math.max(3, 4.5 * scale)
+      const fId = Math.max(4, 6 * scale)
+
+      grp.stores.forEach((s, i) => {
         const col = i % cols
         const row = Math.floor(i / cols)
-        const x = startX + col * (cardW + 0.1)
-        const y = startY + row * (cardH + 0.1)
-
-        // Only draw if within slide bounds (rough check for 16:9)
-        if (y + cardH > 5.6) return
+        const x = GRID_X + col * (cardW + GAP)
+        const y = GRID_Y + row * (cardH + GAP)
 
         slide.addShape(pptx.ShapeType.roundRect, {
           x, y, w: cardW, h: cardH,
           fill: { type: "solid", color: "FFFFFF" },
-          line: { color: "e2e8f0", width: 1 }, rectRadius: 0.05,
+          line: { color: "e2e8f0", width: 1 }, rectRadius: 0.04,
         })
 
-        const smPic = getBase64(s["Image URL"])
+        const smPic = getBase64(s["Store Manager Image URL"])
         if (smPic) {
-          slide.addImage({ data: smPic, x: x + 0.35, y: y + 0.1, w: 0.65, h: 0.65, rounding: true })
+          slide.addImage({ data: smPic, x: x + (cardW - imgSize) / 2, y: y + cardH * 0.03, w: imgSize, h: imgSize, rounding: true })
         }
 
         slide.addText(s["Store Manager Name"] || "N/A", {
-          x: x + 0.05, y: y + 0.8, w: cardW - 0.1, h: 0.2,
-          fontSize: 8, fontFace: "Kanit", color: "0f172a", bold: true, align: "center",
+          x: x + 0.02, y: y + cardH * 0.30, w: cardW - 0.04, h: cardH * 0.12,
+          fontSize: fName, fontFace: "Kanit", color: "0f172a", bold: true, align: "center", wrap: true,
         })
-        slide.addText(s.position || "Manager", {
-          x: x + 0.05, y: y + 1.0, w: cardW - 0.1, h: 0.15,
-          fontSize: 6, fontFace: "Kanit", color: "64748b", align: "center",
+        slide.addText(s["Position (TH)"] || "Manager", {
+          x: x + 0.02, y: y + cardH * 0.45, w: cardW - 0.04, h: cardH * 0.12,
+          fontSize: fPos, fontFace: "Kanit", color: "64748b", align: "center", wrap: true,
         })
-        slide.addText(s["Store Name Thai"] || "", {
-          x: x + 0.05, y: y + 1.2, w: cardW - 0.1, h: 0.2,
-          fontSize: 7, fontFace: "Kanit", color: "1e40af", bold: true, align: "center", shrinkText: true,
+        // Blue Prefix (Title) removed as requested by user
+        const smPhone = fmtPhone(s["Mobile"] || "")
+        if (smPhone) {
+          slide.addText(`📞 ${smPhone}`, {
+            x: x + 0.02, y: y + cardH * 0.63, w: cardW - 0.04, h: cardH * 0.08,
+            fontSize: fPhone, fontFace: "Kanit", color: "059669", align: "center",
+          })
+        }
+        const age = s["Age"] || ""
+        const yrService = calculateYearOfService(s["Hiring Date"]) || s["Year of Service"] || ""
+        const infoLineArr = []
+        if (age) infoLineArr.push(`อายุ ${age} ปี`)
+        if (yrService) infoLineArr.push(`งาน ${yrService}`)
+
+        const infoLine = infoLineArr.join(" | ")
+        if (infoLine) {
+          slide.addText(infoLine, {
+            x: x + 0.02, y: y + cardH * 0.70, w: cardW - 0.04, h: cardH * 0.10,
+            fontSize: fInfo, fontFace: "Kanit", color: "475569", align: "center", wrap: true,
+          })
+        }
+        const badgeW = Math.min(cardW * 0.7, 0.85)
+        slide.addShape(pptx.ShapeType.roundRect, {
+          x: x + (cardW - badgeW) / 2, y: y + cardH * 0.84, w: badgeW, h: cardH * 0.10,
+          fill: { type: "solid", color: "FEF3C7" }, rectRadius: 0.04,
         })
-        slide.addText(`#${s["Store ID"]}`, {
-          x: x + 0.05, y: y + 1.4, w: cardW - 0.1, h: 0.15,
-          fontSize: 6, fontFace: "Kanit", color: "f59e0b", bold: true, align: "center",
+        slide.addText(`#${s["ST ID"]}`, {
+          x: x + (cardW - badgeW) / 2, y: y + cardH * 0.84, w: badgeW, h: cardH * 0.10,
+          fontSize: fId, fontFace: "Kanit", color: "d97706", bold: true, align: "center",
         })
       })
     }
+    try {
+      const fileName = `TalentExperience_Export_${new Date().toISOString().split('T')[0]}.pptx`
+      const zipData = await pptx.write({ outputType: "blob" }) as Blob
 
-    await pptx.writeFile({ fileName: `Lotus_OrgChart_Export_${new Date().toISOString().slice(0, 10)}.pptx` })
+      // === Method 1: File System Access API (showSaveFilePicker) ===
+      if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+        try {
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName: fileName,
+            types: [{
+              description: 'PowerPoint Presentation',
+              accept: { 'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'] }
+            }]
+          })
+          const writable = await handle.createWritable()
+          await writable.write(zipData)
+          await writable.close()
+          showToast(`บันทึกสำเร็จ: ${fileName}`)
+          return
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            showToast("ยกเลิกการบันทึก")
+            return
+          }
+          console.warn("showSaveFilePicker failed, trying fallback:", err)
+        }
+      }
+
+      // === Method 2: Fallback to file-saver ===
+      saveAs(zipData, fileName)
+      showToast("กำลังดาวน์โหลดไฟล์...")
+    } catch (err) {
+      console.error("PPTX write error:", err)
+      showToast("สร้างไฟล์ PPTX ล้มเหลว", "err")
+    }
   }, [orgData, agmData, filteredOrgData, imageCache])
 
   if (!mounted || isAuthenticated === null) {
@@ -255,8 +355,6 @@ export default function Home() {
     return <LoginPage onLogin={() => setIsAuthenticated(true)} />
   }
 
-  const connected = isConfigured()
-
   return (
     <div className="min-h-screen bg-transparent flex flex-col">
       <AppHeader
@@ -265,58 +363,37 @@ export default function Home() {
         onOpenSheet={() => setPage("sheet")}
         onOpenSettings={() => setSettingsOpen(true)}
         onLogout={handleLogout}
-        connected={connected}
+        onExcelUpload={handleExcelUpload}
       />
 
       <main className="flex-1 mx-auto w-full max-w-[1440px] px-5 py-8">
-        {/* Connection banner when not configured */}
-        {!connected && (
-          <div className="mb-8 flex flex-col items-center gap-4 rounded-3xl border border-dashed border-accent bg-accent/5 p-12 text-center animate-in fade-in zoom-in duration-500">
-            <WifiOff className="h-16 w-16 text-accent animate-pulse" />
-            <div className="max-w-md">
-              <h3 className="text-2xl font-black text-foreground">ระบบจำลองฐานข้อมูล (Internal Mode)</h3>
-              <p className="mt-2 text-muted-foreground leading-relaxed">
-                เข้าถึงและจัดการข้อมูลทีมงานผ่านระบบจำลองภายใน Browser ข้อมูลทั้งหมดจะถูกบันทึกไว้อย่างปลอดภัยลบนเครื่องของคุณ
-              </p>
-            </div>
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="flex items-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-bold text-white premium-button shadow-xl shadow-primary/20"
-            >
-              <Settings className="h-5 w-5" />
-              จัดการข้อมูลระบบ
-            </button>
-          </div>
-        )}
-
-        {/* Loading state */}
-        {loading && connected && (
+        {loading && (
           <div className="flex flex-col items-center justify-center gap-4 py-32 animate-in fade-in">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-base font-bold text-primary tracking-wide">กำลังประมวลผลข้อมูลทางสถิติ...</p>
+            <p className="text-base font-bold text-primary tracking-wide">กำลังประมวลผลข้อมูล...</p>
           </div>
         )}
 
-        {/* Error state */}
-        {error && connected && !loading && (
-          <div className="mb-8 rounded-2xl border border-destructive/20 bg-destructive/5 p-6 border-l-4 border-l-destructive">
-            <p className="text-sm font-bold text-destructive flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-destructive animate-ping" />
-              เกิดข้อผิดพลาด: {error}
+        {error && !loading && (
+          <div className="mb-8 rounded-2xl border border-blue-200 bg-blue-50 p-6">
+            <p className="text-sm font-bold text-blue-600 flex items-center gap-2 mb-3">
+              <FileUp className="h-5 w-5" />
+              {error}
             </p>
-            <div className="mt-4 flex gap-3">
-              <button onClick={() => loadAllData()} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm">
+            <div className="flex gap-3 flex-wrap">
+              <label className="flex items-center gap-2 cursor-pointer rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-blue-700 transition-all active:scale-95">
+                <FileUp className="h-4 w-4" />
+                นำเข้าไฟล์ Excel (.xlsx) เพื่อเริ่มใช้งาน
+                <input type="file" accept=".xlsx,.xls" onChange={handleExcelUpload} className="hidden" />
+              </label>
+              <button onClick={() => loadAllData()} className="rounded-xl border border-border bg-white px-5 py-3 text-sm font-bold text-muted-foreground">
                 ลองอีกครั้ง
-              </button>
-              <button onClick={() => setSettingsOpen(true)} className="rounded-xl border border-border bg-white px-5 py-2.5 text-sm font-bold text-muted-foreground">
-                ตั้งค่า
               </button>
             </div>
           </div>
         )}
 
-        {/* Content Views */}
-        {(!loading || !connected) && (
+        {!loading && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             {page === "dash" && (
               <Dashboard
@@ -325,8 +402,6 @@ export default function Home() {
                 imageCache={imageCache}
                 onNavigate={(p) => setPage(p as PageId)}
                 onOpenSheet={() => setPage("sheet")}
-                onShowProvinceDetail={setSelectedProvince}
-                connected={connected}
               />
             )}
 
@@ -373,21 +448,26 @@ export default function Home() {
               <MockSheet
                 orgData={orgData}
                 agmData={agmData}
+                imageCache={imageCache}
                 onUpdateOrg={handleUpdateRow}
                 onAddOrg={handleAddRow}
                 onDeleteOrg={handleDeleteRow}
                 onUpdateAgm={handleSaveAgm}
                 onDeleteAgm={handleDeleteAgm}
+                onReorderOrg={async (oldIdx, newIdx) => {
+                  await (import("@/lib/store")).then(m => m.reorderRow(oldIdx, newIdx))
+                }}
+                onReset={async () => {
+                  await (import("@/lib/store")).then(m => m.resetData())
+                }}
               />
             )}
           </div>
         )}
       </main>
 
-      {/* Footer with Group Image */}
       <AppFooter />
 
-      {/* Overlays & Modals */}
       {detailStore && <StoreDetailModal store={detailStore} imageCache={imageCache} onClose={() => setDetailStore(null)} />}
       {selectedProvince && (
         <ProvinceDetailModal
@@ -414,27 +494,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      <div className={`fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center gap-2 px-4 py-2 text-center text-[0.65rem] font-bold tracking-widest uppercase ${connected ? "bg-primary/90 text-white" : "bg-slate-900 text-slate-400"} backdrop-blur-sm`}>
-        {connected ? (
-          <>
-            <Wifi className="h-3 w-3" />
-            <span>Local Database Active</span>
-            <span className="mx-2 opacity-30">|</span>
-            <span className="text-secondary">{orgData.length} stores mapped</span>
-            <span className="mx-2 opacity-30">|</span>
-            <span className="text-accent">{agmData.length} AGM monitored</span>
-          </>
-        ) : (
-          <>
-            <WifiOff className="h-3 w-3" />
-            <span>Offline Simulation Mode</span>
-            <span className="mx-2 opacity-30">|</span>
-            <button onClick={() => setSettingsOpen(true)} className="underline hover:text-white transition-colors">Emergency DB Setup</button>
-          </>
-        )}
-      </div>
     </div>
   )
 }
-

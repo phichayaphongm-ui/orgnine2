@@ -1,20 +1,20 @@
 export interface OrgRecord {
-  'Store ID': string
-  'Location Code': string
-  'Store Name Thai': string
-  'Store Name': string
-  'AGM Name': string
-  'AGM ZONE': string
-  'GPM Name': string
-  'Store Manager Name': string
-  position: string
-  'Province': string
-  'SM Phone': string
-  'Store Phone': string
-  'Mobile Phone': string       // kept for backward compat
-  'Yr of Service in TL': string
-  'Service in Position': string
-  'Image URL': string
+  'ST ID': string
+  'Title': string
+  'Store Manager Name'?: string
+  'Gender'?: string
+  'Position (TH)'?: string
+  'Mobile'?: string
+  'Age'?: string
+  'Hi Educ Level'?: string
+  'Hiring Date'?: string
+  'Year of Service'?: string
+  'Line Manager name'?: string
+  "LM's Position title"?: string
+  'Region': string
+  'AGM Mobile'?: string
+  'AGM Image URL'?: string
+  'Store Manager Image URL'?: string
   _imageFileId?: string
   _localImage?: string
 }
@@ -23,9 +23,10 @@ export interface AgmRecord {
   'AGM Name': string
   'AGM ZONE': string
   'Mobile Phone': string
-  Email: string
+  Email?: string
   'Image URL': string
   Remark: string
+  Position?: string
   _imageFileId?: string
   _localImage?: string
 }

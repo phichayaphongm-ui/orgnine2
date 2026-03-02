@@ -18,7 +18,7 @@ interface AppHeaderProps {
   onOpenSheet: () => void
   onOpenSettings: () => void
   onLogout: () => void
-  connected: boolean
+  onExcelUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 
 export default function AppHeader({
@@ -27,7 +27,7 @@ export default function AppHeader({
   onOpenSheet,
   onOpenSettings,
   onLogout,
-  connected,
+  onExcelUpload,
 }: AppHeaderProps) {
   const navItems: { id: PageId; label: string; icon: any }[] = [
     { id: "dash", label: "หน้าหลัก", icon: LayoutDashboard },
@@ -44,17 +44,17 @@ export default function AppHeader({
             <div className="relative h-10 w-10 overflow-hidden rounded-xl shadow-premium group-active:scale-95 transition-transform">
               <Image
                 src="/images/logo.jpg"
-                alt="Lotus's Logo"
+                alt="Logo"
                 fill
                 className="object-cover"
               />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-sm font-black tracking-tight text-primary uppercase leading-tight">
-                Lotus's Thailand
+                Talent Experience
               </h1>
               <p className="text-[0.6rem] font-bold text-muted-foreground uppercase tracking-widest">
-                Operation Team
+                HR Intelligence Portal
               </p>
             </div>
           </div>
@@ -77,6 +77,15 @@ export default function AppHeader({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Quick Upload Button */}
+          <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-emerald-50 px-4 text-xs font-black text-emerald-600 transition-all hover:bg-emerald-100 hover:shadow-sm active:scale-95 premium-button">
+            <FileBarChart className="h-4 w-4" />
+            <span className="hidden sm:inline">นำเข้า CSV / EXCEL</span>
+            <input type="file" accept=".csv,.xlsx,.xls" onChange={onExcelUpload} className="hidden" />
+          </label>
+
+          <div className="h-6 w-px bg-border mx-1" />
+
           {/* Data Sheet Mockup Link */}
           <button
             onClick={onOpenSheet}
