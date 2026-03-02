@@ -72,28 +72,34 @@ function regenerateAgmFromOrg(orgData: OrgRecord[], existingAgm: AgmRecord[]): A
   return result
 }
 
-// ========== Load data (Internal Local Storage Only) ==========
+// ========== Load data (Supabase with Local Fallback) ==========
 export async function loadAllData() {
   updateState({ loading: true, error: null })
 
-  // 1. Initial Load from LocalStorage
-  const localOrgData = storageService.getOrgData()
-  const localAgmData = storageService.getAgmData()
+  try {
+    const orgData = await storageService.getOrgData()
+    const agmData = await storageService.getAgmData()
 
-  if (localOrgData.length > 0) {
-    const freshAgmData = regenerateAgmFromOrg(localOrgData, localAgmData)
+    if (orgData.length > 0) {
+      const freshAgmData = regenerateAgmFromOrg(orgData, agmData)
+      updateState({
+        orgData: orgData,
+        agmData: freshAgmData,
+        loading: false,
+        error: null
+      })
+      await storageService.saveAgmData(freshAgmData)
+      lazyLoadImages()
+    } else {
+      updateState({
+        loading: false,
+        error: "ระบบยังไม่พบข้อมูล (โปรดนำเข้าไฟล์ Excel หรือสร้างข้อมูลใหม่)"
+      })
+    }
+  } catch (err) {
     updateState({
-      orgData: localOrgData,
-      agmData: freshAgmData,
       loading: false,
-      error: null
-    })
-    storageService.saveAgmData(freshAgmData)
-    lazyLoadImages()
-  } else {
-    updateState({
-      loading: false,
-      error: "ระบบยังไม่พบข้อมูล (โปรดนำเข้าไฟล์ Excel หรือสร้างข้อมูลใหม่)"
+      error: "เกิดข้อผิดพลาดในการโหลดข้อมูลจาก Cloud"
     })
   }
 }
@@ -118,7 +124,6 @@ async function lazyLoadImages() {
   for (let i = 0; i < allFileIds.length; i += 5) {
     const batch = allFileIds.slice(i, i + 5)
 
-    // We only have local caching now
     const results = await Promise.allSettled(
       batch.map((item) => storageService.getImageBase64(item.id))
     )
@@ -138,39 +143,39 @@ export function getImageFromCache(fileId: string): string {
   return state.imageCache[fileId] || ""
 }
 
-// ========== CRUD Operations (Purely Local) ==========
+// ========== CRUD Operations (Supabase) ==========
 export async function addRow(row: OrgRecord) {
-  storageService.addOrgRow(row)
+  await storageService.addOrgRow(row)
   await loadAllData()
 }
 
 export async function updateRow(index: number, row: OrgRecord) {
-  storageService.updateOrgRow(index, row)
+  await storageService.updateOrgRow(index, row)
   await loadAllData()
 }
 
 export async function deleteRow(index: number) {
-  storageService.deleteOrgRow(index)
+  await storageService.deleteOrgRow(index)
   await loadAllData()
 }
 
 export async function saveAgm(row: AgmRecord) {
-  storageService.saveAgmRow(row)
+  await storageService.saveAgmRow(row)
   await loadAllData()
 }
 
 export async function deleteAgm(name: string) {
-  storageService.deleteAgmRow(name)
+  await storageService.deleteAgmRow(name)
   await loadAllData()
 }
 
 export async function reorderRow(oldIndex: number, newIndex: number) {
-  storageService.reorderOrgRows(oldIndex, newIndex)
+  await storageService.reorderOrgRows(oldIndex, newIndex)
   await loadAllData()
 }
 
 export async function resetData() {
-  storageService.resetAllData()
+  await storageService.resetAllData()
   await loadAllData()
 }
 
@@ -184,7 +189,7 @@ export async function uploadAndSaveImage(
 
   if (source instanceof File) {
     const { resizeImage } = await import("./image-utils")
-    base64Data = await resizeImage(source, 300, 300, 0.6)
+    base64Data = await resizeImage(source, 360, 360, 0.7)
     filename = source.name
   } else {
     base64Data = source
@@ -196,14 +201,14 @@ export async function uploadAndSaveImage(
     const idx = state.orgData.findIndex(r => r["ST ID"] === refId)
     if (idx >= 0) setLocalOrgImage(idx, base64Data)
   } else {
-    setLocalAgmImage(refId, base64Data)
+    await setLocalAgmImage(refId, base64Data)
   }
 
   return { url: base64Data, base64: base64Data }
 }
 
 export async function bulkImportOrg(rows: OrgRecord[]) {
-  storageService.saveOrgData(rows as any[])
+  await storageService.saveOrgData(rows as any[])
   await loadAllData()
 }
 
@@ -219,7 +224,7 @@ export function setLocalOrgImage(index: number, base64: string) {
   }
 }
 
-export function setLocalAgmImage(name: string, base64: string) {
+export async function setLocalAgmImage(name: string, base64: string) {
   const newAgmData = [...state.agmData]
   const idx = newAgmData.findIndex((r) => r["AGM Name"] === name)
   if (idx >= 0) {
@@ -237,8 +242,8 @@ export function setLocalAgmImage(name: string, base64: string) {
   })
 
   updateState({ agmData: newAgmData, orgData: newOrgData })
-  storageService.saveOrgData(newOrgData as any[])
-  storageService.saveAgmData(newAgmData)
+  await storageService.saveOrgData(newOrgData as any[])
+  await storageService.saveAgmData(newAgmData)
 }
 
 export async function loadExcelFromFile(file: File) {
@@ -272,8 +277,8 @@ export async function loadExcelFromFile(file: File) {
       error: null
     })
 
-    storageService.saveOrgData(orgResult as any[])
-    storageService.saveAgmData(agmData as any[])
+    await storageService.saveOrgData(orgResult as any[])
+    await storageService.saveAgmData(agmData as any[])
     lazyLoadImages()
 
     return orgResult.length

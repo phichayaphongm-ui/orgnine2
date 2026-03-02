@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { storageService } from "@/lib/storage-service"
-import { Settings, CheckCircle2, AlertCircle, Download, Upload, Trash2 } from "lucide-react"
+import { Settings, ShieldCheck, AlertCircle, Download, Upload, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface SettingsPanelProps {
@@ -15,20 +15,23 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
   const [stats, setStats] = useState({ orgCount: 0, agmCount: 0 })
 
   useEffect(() => {
-    if (open) {
-      const orgData = storageService.getOrgData()
-      const agmData = storageService.getAgmData()
-      setStats({
-        orgCount: orgData.length,
-        agmCount: agmData.length
-      })
+    async function fetchStats() {
+      if (open) {
+        const orgData = await storageService.getOrgData()
+        const agmData = await storageService.getAgmData()
+        setStats({
+          orgCount: orgData.length,
+          agmCount: agmData.length
+        })
+      }
     }
+    fetchStats()
   }, [open])
 
-  function handleExport() {
+  async function handleExport() {
     const data = {
-      orgData: storageService.getOrgData(),
-      agmData: storageService.getAgmData(),
+      orgData: await storageService.getOrgData(),
+      agmData: await storageService.getAgmData(),
       exportedAt: new Date().toISOString()
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
@@ -41,16 +44,16 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
     toast.success("ส่งออกข้อมูลสำเร็จ")
   }
 
-  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = JSON.parse(event.target?.result as string)
-        if (data.orgData) storageService.saveOrgData(data.orgData)
-        if (data.agmData) storageService.saveAgmData(data.agmData)
+        if (data.orgData) await storageService.saveOrgData(data.orgData)
+        if (data.agmData) await storageService.saveAgmData(data.agmData)
 
         toast.success("นำเข้าข้อมูลสำเร็จ")
         setStats({
@@ -65,10 +68,26 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
     reader.readAsText(file)
   }
 
-  function handleReset() {
-    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด? ข้อมูลที่ไม่ได้สำรองไว้จะหายไป (รูปภาพในฐานข้อมูลจะยังคงอยู่ แต่การเชื่อมโยงจะหายไป)")) {
-      localStorage.removeItem("ORG_CHART_ORG_DATA")
-      localStorage.removeItem("ORG_CHART_AGM_DATA")
+  async function handleSync() {
+    const t = toast.loading("กำลังซิงค์ข้อมูลขึ้น Cloud...")
+    try {
+      await storageService.syncToCloud()
+      const orgData = await storageService.getOrgData()
+      const agmData = await storageService.getAgmData()
+      setStats({
+        orgCount: orgData.length,
+        agmCount: agmData.length
+      })
+      toast.success("ซิงค์ข้อมูลสำเร็จ! ข้อมูลของคุณออนไลน์แล้ว", { id: t })
+      onSave()
+    } catch (err) {
+      toast.error("ซิงค์ข้อมูลล้มเหลว กรุณาลองใหม่", { id: t })
+    }
+  }
+
+  async function handleReset() {
+    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด? ข้อมูลทั้งในเครื่องและบน Cloud จะหายไปถาวร!")) {
+      await storageService.resetAllData()
       toast.success("ล้างข้อมูลสำเร็จ")
       setStats({ orgCount: 0, agmCount: 0 })
       onSave()
@@ -93,14 +112,14 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
 
         <div className="space-y-5 p-6 max-h-[80vh] overflow-y-auto">
           {/* Status */}
-          <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-500" />
             <div>
               <p className="text-sm font-semibold text-foreground">
-                โหมดทำงานแบบออฟไลน์ (Standalone Mode)
+                โหมดทำงานแบบออนไลน์ (Supabase Protected)
               </p>
               <p className="text-xs text-muted-foreground">
-                ข้อมูลถูกบันทึกไว้ใน Browser ของคุณอย่างปลอดภัย
+                ข้อมูลถูกจัดเก็บแบบส่วนตัวบน Cloud และแชร์ได้ทุกอุปกรณ์
               </p>
             </div>
           </div>
@@ -115,6 +134,20 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
               <p className="text-xs text-muted-foreground font-semibold">จำนวน AGM</p>
               <p className="text-lg font-black text-primary">{stats.agmCount}</p>
             </div>
+          </div>
+
+          <div className="h-px bg-border/50" />
+
+          {/* Cloud Actions */}
+          <div className="space-y-3">
+            <p className="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground px-1">ระบบคลาวด์</p>
+            <button
+              onClick={handleSync}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-xs font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95"
+            >
+              <Upload className="h-4 w-4" />
+              ซิงค์ข้อมูลขึ้น Cloud (SYNC NOW)
+            </button>
           </div>
 
           <div className="h-px bg-border/50" />
@@ -150,10 +183,10 @@ export default function SettingsPanel({ open, onClose, onSave }: SettingsPanelPr
           <div className="rounded-xl bg-accent/5 p-4 border border-dashed border-accent/20">
             <p className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-wider">
               <AlertCircle className="h-3.5 w-3.5 text-accent" />
-              คำแนะนำ
+              คำแนะนำระบบออนไลน์
             </p>
             <p className="mt-1 text-[0.65rem] text-muted-foreground leading-relaxed">
-              เนื่องจากแอปทำงานแบบ Local ข้อมูลจะถูกเก็บไว้ในเครื่องเท่านั้น แนะนำให้ทำ Export สำรองไฟล์ไว้เป็นระยะเพื่อความปลอดภัยของข้อมูล
+              ในโหมดออนไลน์ ข้อมูลของคุณจะถูกเก็บไว้ที่ Supabase ซึ่งมีความปลอดภัยสูงและคุณสามารถเข้าถึงข้อมูลเดียวกันได้จากทุกที่ที่เข้าสู่ระบบ
             </p>
           </div>
         </div>

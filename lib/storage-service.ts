@@ -1,4 +1,5 @@
 import type { OrgRecord as OrgRow, AgmRecord as AgmRow } from "./types"
+import { supabase } from "./supabase"
 
 const DATABASE_NAME = "OrgChartInternalDB"
 const STORE_NAME = "images"
@@ -58,81 +59,156 @@ const AGM_DATA_KEY = "ORG_CHART_AGM_DATA"
 
 // --- Storage Service ---
 export const storageService = {
-    // ORG DATA
-    getOrgData: (): OrgRow[] => {
+    // ORG DATA (Local)
+    getOrgDataLocal: (): OrgRow[] => {
         if (typeof window === "undefined") return []
         const data = localStorage.getItem(ORG_DATA_KEY)
         return data ? JSON.parse(data) : []
     },
 
-    saveOrgData: (data: OrgRow[]) => {
+    saveOrgDataLocal: (data: OrgRow[]) => {
         localStorage.setItem(ORG_DATA_KEY, JSON.stringify(data))
     },
 
-    addOrgRow: (row: OrgRow) => {
-        const data = storageService.getOrgData()
-        data.push(row)
-        storageService.saveOrgData(data)
+    // ORG DATA (Supabase)
+    getOrgData: async (): Promise<OrgRow[]> => {
+        const { data, error } = await supabase
+            .from('org_data')
+            .select('*')
+            .order('id', { ascending: true })
+
+        if (error) {
+            console.error("Error fetching org data from Supabase:", error)
+            return storageService.getOrgDataLocal()
+        }
+        return data as OrgRow[]
     },
 
-    updateOrgRow: (index: number, row: OrgRow) => {
-        const data = storageService.getOrgData()
+    saveOrgData: async (data: OrgRow[]) => {
+        // First delete all existing rows and then insert all at once (simple sync)
+        // Note: For large datasets, a more granular approach is better
+        const { error: deleteError } = await supabase.from('org_data').delete().neq('id', -1)
+        if (deleteError) {
+            console.error("Error deleting old org data from Supabase:", deleteError)
+            return
+        }
+
+        const { error: insertError } = await supabase.from('org_data').insert(data)
+        if (insertError) {
+            console.error("Error inserting org data to Supabase:", insertError)
+        }
+
+        // Always save locally as well
+        storageService.saveOrgDataLocal(data)
+    },
+
+    addOrgRow: async (row: OrgRow) => {
+        const data = await storageService.getOrgData()
+        data.push(row)
+        await storageService.saveOrgData(data)
+    },
+
+    updateOrgRow: async (index: number, row: OrgRow) => {
+        const data = await storageService.getOrgData()
         if (index >= 0 && index < data.length) {
             data[index] = row
-            storageService.saveOrgData(data)
+            await storageService.saveOrgData(data)
         }
     },
 
-    deleteOrgRow: (index: number) => {
-        const data = storageService.getOrgData()
+    deleteOrgRow: async (index: number) => {
+        const data = await storageService.getOrgData()
         if (index >= 0 && index < data.length) {
             data.splice(index, 1)
-            storageService.saveOrgData(data)
+            await storageService.saveOrgData(data)
         }
     },
 
-    reorderOrgRows: (oldIndex: number, newIndex: number) => {
-        const data = storageService.getOrgData()
+    reorderOrgRows: async (oldIndex: number, newIndex: number) => {
+        const data = await storageService.getOrgData()
         if (oldIndex < 0 || oldIndex >= data.length || newIndex < 0 || newIndex >= data.length) return
         const [movedItem] = data.splice(oldIndex, 1)
         data.splice(newIndex, 0, movedItem)
-        storageService.saveOrgData(data)
+        await storageService.saveOrgData(data)
     },
 
-    // AGM DATA
-    getAgmData: (): AgmRow[] => {
+    // AGM DATA (Local)
+    getAgmDataLocal: (): AgmRow[] => {
         if (typeof window === "undefined") return []
         const data = localStorage.getItem(AGM_DATA_KEY)
         return data ? JSON.parse(data) : []
     },
 
-    saveAgmData: (data: AgmRow[]) => {
+    saveAgmDataLocal: (data: AgmRow[]) => {
         localStorage.setItem(AGM_DATA_KEY, JSON.stringify(data))
     },
 
-    saveAgmRow: (row: AgmRow) => {
-        const data = storageService.getAgmData()
+    // AGM DATA (Supabase)
+    getAgmData: async (): Promise<AgmRow[]> => {
+        const { data, error } = await supabase
+            .from('agm_data')
+            .select('*')
+
+        if (error) {
+            console.error("Error fetching agm data from Supabase:", error)
+            return storageService.getAgmDataLocal()
+        }
+        return data as AgmRow[]
+    },
+
+    saveAgmData: async (data: AgmRow[]) => {
+        const { error: deleteError } = await supabase.from('agm_data').delete().neq('AGM Name', '')
+        if (deleteError) {
+            console.error("Error deleting old agm data from Supabase:", deleteError)
+            return
+        }
+
+        const { error: insertError } = await supabase.from('agm_data').insert(data)
+        if (insertError) {
+            console.error("Error inserting agm data to Supabase:", insertError)
+        }
+
+        // Always save locally as well
+        storageService.saveAgmDataLocal(data)
+    },
+
+    saveAgmRow: async (row: AgmRow) => {
+        const data = await storageService.getAgmData()
         const existingIndex = data.findIndex(r => r["AGM Name"] === row["AGM Name"])
         if (existingIndex >= 0) {
             data[existingIndex] = row
         } else {
             data.push(row)
         }
-        storageService.saveAgmData(data)
+        await storageService.saveAgmData(data)
     },
 
-    deleteAgmRow: (agmName: string) => {
-        const data = storageService.getAgmData()
+    deleteAgmRow: async (agmName: string) => {
+        const data = await storageService.getAgmData()
         const newData = data.filter(r => r["AGM Name"] !== agmName)
-        storageService.saveAgmData(newData)
+        await storageService.saveAgmData(newData)
     },
 
-    // IMAGE HANDLING
+    // SYNC LOCAL TO CLOUD
+    syncToCloud: async () => {
+        const localOrgData = storageService.getOrgDataLocal()
+        const localAgmData = storageService.getAgmDataLocal()
+
+        if (localOrgData.length > 0) {
+            await storageService.saveOrgData(localOrgData)
+        }
+        if (localAgmData.length > 0) {
+            await storageService.saveAgmData(localAgmData)
+        }
+
+        return { success: true }
+    },
+
+    // IMAGE HANDLING (Always Local IndexedDB for now)
     async uploadImage(base64: string, filename: string, refId: string, type: "agm" | "store") {
         const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         await saveImageToDB(imageId, base64)
 
-        // We return a "pseudo-URL" that identifies it's stored in IndexedDB
         const internalUrl = `localdb://${imageId}`
 
         return {
@@ -146,10 +222,11 @@ export const storageService = {
         return getImageFromDB(fileId)
     },
 
-    resetAllData: () => {
+    resetAllData: async () => {
         localStorage.removeItem(ORG_DATA_KEY)
         localStorage.removeItem(AGM_DATA_KEY)
-        // Note: IndexedDB images are kept for now to avoid breaking references
-        // but can be added here if needed.
+        await supabase.from('org_data').delete().neq('id', -1)
+        await supabase.from('agm_data').delete().neq('AGM Name', '')
     }
 }
+
