@@ -93,7 +93,10 @@ export const storageService = {
             return
         }
 
-        const { error: insertError } = await supabase.from('org_data').insert(data)
+        // Strip 'id' column from data because it's a generated identity column
+        const dataToInsert = data.map(({ id, ...rest }: any) => rest)
+
+        const { error: insertError } = await supabase.from('org_data').insert(dataToInsert)
         if (insertError) {
             console.error("Error inserting org data to Supabase:", insertError)
         }
@@ -163,9 +166,20 @@ export const storageService = {
             return
         }
 
-        const { error: insertError } = await supabase.from('agm_data').insert(data)
+        // Filter out internal fields and fields that don't exist in Supabase schema (like 'AGM Phone')
+        const dataToInsert = data.map(row => ({
+            "AGM Name": row["AGM Name"],
+            "AGM ZONE": row["AGM ZONE"],
+            "Mobile Phone": row["Mobile Phone"],
+            "Email": row["Email"] || "",
+            "Image URL": row["Image URL"],
+            "Remark": row["Remark"] || "",
+            "Position": row["Position"] || ""
+        }))
+
+        const { error: insertError } = await supabase.from('agm_data').insert(dataToInsert)
         if (insertError) {
-            console.error("Error inserting agm data to Supabase:", insertError)
+            console.error("Error inserting agm_data to Supabase:", insertError)
         }
 
         // Always save locally as well

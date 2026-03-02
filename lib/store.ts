@@ -261,7 +261,6 @@ export async function loadExcelFromFile(file: File) {
       return {
         "AGM Name": name,
         "AGM ZONE": storeWithAgm?.["Region"] || "",
-        "AGM Phone": storeWithAgm?.["AGM Mobile"] || "",
         "Mobile Phone": storeWithAgm?.["AGM Mobile"] || "",
         Email: "",
         "Image URL": storeWithAgm?.["AGM Image URL"] || "",
