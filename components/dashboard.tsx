@@ -180,7 +180,7 @@ export default function Dashboard({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* ══ HERO SECTION - Clean & Focused ════════════════════════ */}
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-2xl px-10 py-16">
+      <section className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-slate-900 border border-white/10 shadow-2xl px-6 py-12 md:px-10 md:py-16">
         {/* Abstract Background Decoration */}
         <div className="absolute inset-0 opacity-[0.06] z-0"
           style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
@@ -192,7 +192,7 @@ export default function Dashboard({
             <Globe className="h-4 w-4 text-blue-400" />
             Organization Intelligence
           </div>
-          <h1 className="text-5xl md:text-6xl font-black text-white leading-tight">
+          <h1 className="text-3xl md:text-6xl font-black text-white leading-tight">
             Talent Experience <br />
             <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
               Operation Map
@@ -303,15 +303,16 @@ export default function Dashboard({
             <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #0f2b46 50%, #162d50 100%)' }}>
               {/* Title */}
               <div className="px-8 pt-8 pb-4">
-                <h2 className="text-2xl font-black text-white tracking-tight">
-                  Store Manager <span style={{ color: '#f97316' }}>Demographic Overview</span>
-                  <span className="text-white/60 ml-2 text-lg">(Total: {o.total})</span>
+                <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                  Store Manager <span style={{ color: '#f97316' }}>Demographic</span> <br className="md:hidden" />
+                  <span style={{ color: '#f97316' }}>Overview</span>
+                  <span className="text-white/60 ml-2 text-base md:text-lg">(Total: {o.total})</span>
                 </h2>
                 <p className="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">2026 Snapshot — All Regions</p>
               </div>
 
               {/* KPI Cards */}
-              <div className="px-8 pb-5 grid grid-cols-4 gap-4">
+              <div className="px-6 md:px-8 pb-5 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {[
                   { label: 'Total Headcount', val: `${o.total}`, sub: 'Store Managers', color: '#f97316' },
                   { label: 'Female Led', val: `${fPct}%`, sub: `${o.female} persons`, color: '#ec4899' },
@@ -320,14 +321,14 @@ export default function Dashboard({
                 ].map(kpi => (
                   <div key={kpi.label} className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 px-5 py-4">
                     <p className="text-[0.55rem] font-bold uppercase tracking-widest text-white/50">{kpi.label}</p>
-                    <p className="text-3xl font-black tabular-nums mt-1" style={{ color: kpi.color }}>{kpi.val}</p>
+                    <p className="text-2xl md:text-3xl font-black tabular-nums mt-1" style={{ color: kpi.color }}>{kpi.val}</p>
                     <p className="text-[0.55rem] font-medium text-white/40 mt-0.5">{kpi.sub}</p>
                   </div>
                 ))}
               </div>
 
               {/* Main Grid */}
-              <div className="px-8 pb-8 grid grid-cols-4 gap-4">
+              <div className="px-6 md:px-8 pb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* GENDER */}
                 <div className="rounded-2xl bg-white p-5">
                   <p className="text-[0.6rem] font-black uppercase tracking-wider mb-4">
@@ -364,7 +365,7 @@ export default function Dashboard({
                 </div>
 
                 {/* AGE GROUP - Area Chart */}
-                <div className="col-span-2 rounded-2xl bg-white p-5">
+                <div className="md:col-span-2 rounded-2xl bg-white p-5">
                   <p className="text-[0.6rem] font-black uppercase tracking-wider mb-2">
                     <span className="text-purple-500">AGE GROUP:</span> <span className="text-slate-600">Workforce Maturity</span>
                     <span className="ml-2 text-xs font-black text-orange-500 tabular-nums">({o.ageCount} คน)</span>
@@ -495,7 +496,7 @@ export default function Dashboard({
                     </div>
 
                     {/* KPI Cards */}
-                    <div className="px-6 pb-4 grid grid-cols-3 gap-3">
+                    <div className="px-6 pb-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                       <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 px-4 py-3">
                         <p className="text-[0.55rem] font-bold text-white/50 uppercase">Headcount:</p>
                         <p className="text-2xl font-black tabular-nums" style={{ color: accentColor }}>{z.total}</p>
@@ -513,7 +514,7 @@ export default function Dashboard({
                     </div>
 
                     {/* Content Grid */}
-                    <div className="px-6 pb-6 grid grid-cols-2 gap-4">
+                    <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* GENDER */}
                       <div className="rounded-xl bg-white p-4">
                         <p className="text-[0.6rem] font-black uppercase tracking-wider mb-3">
