@@ -93,8 +93,8 @@ export const storageService = {
             return
         }
 
-        // Strip 'id' column from data because it's a generated identity column
-        const dataToInsert = data.map(({ id, ...rest }: any) => rest)
+        // Strip 'id', 'created_at', and 'updated_at' columns from data because they are managed by Supabase
+        const dataToInsert = data.map(({ id, created_at, updated_at, ...rest }: any) => rest)
 
         const { error: insertError } = await supabase.from('org_data').insert(dataToInsert)
         if (insertError) {
@@ -173,8 +173,7 @@ export const storageService = {
             "Mobile Phone": row["Mobile Phone"],
             "Email": row["Email"] || "",
             "Image URL": row["Image URL"],
-            "Remark": row["Remark"] || "",
-            "Position": row["Position"] || ""
+            "Remark": row["Remark"] || ""
         }))
 
         const { error: insertError } = await supabase.from('agm_data').insert(dataToInsert)
