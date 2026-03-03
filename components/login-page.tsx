@@ -98,7 +98,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
                     <div className="mb-10">
                         <h1 className="text-4xl font-black text-white tracking-tight mb-2">
-                            Talent <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">Experience</span>
+                            Talent <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">Acquisition</span>
                         </h1>
                         <p className="text-slate-400 font-medium text-sm">HR Intelligence Portal</p>
                     </div>
