@@ -31,7 +31,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     }
 
     const handleForgotPassword = () => {
-        window.location.href = "mailto:wanich342516@gmail.com?subject=Request Password Reset for Talent Experience"
+        window.location.href = "mailto:wanich342516@gmail.com?subject=Request Password Reset for Talent Acquisition"
     }
 
     return (
@@ -171,7 +171,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
                     <div className="mt-10 pt-8 border-t border-white/5">
                         <p className="text-[0.6rem] text-slate-600 font-bold uppercase tracking-[0.3em]">
-                            © {new Date().getFullYear()} Talent Experience Systems
+                            © {new Date().getFullYear()} Talent Acquisition Systems
                         </p>
                     </div>
                 </div>

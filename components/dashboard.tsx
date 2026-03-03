@@ -193,7 +193,7 @@ export default function Dashboard({
             Organization Intelligence
           </div>
           <h1 className="text-3xl md:text-6xl font-black text-white leading-tight">
-            Talent Experience <br className="hidden sm:block" />
+            Talent Acquisition <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
               Operation Map
             </span>
@@ -225,7 +225,7 @@ export default function Dashboard({
         <div className="absolute inset-0 z-0 text-center">
           <Image
             src="/images/employees.png"
-            alt="Talent Experience Team"
+            alt="Talent Acquisition Team"
             fill
             className="object-cover opacity-100 object-center md:object-[center_20%] transition-transform duration-[3000ms] group-hover:scale-105"
             priority

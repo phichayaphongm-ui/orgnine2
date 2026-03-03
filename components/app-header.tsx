@@ -62,7 +62,7 @@ export default function AppHeader({
             </div>
             <div className="hidden xs:block">
               <h1 className="text-[0.7rem] sm:text-sm font-black tracking-tight text-primary uppercase leading-tight">
-                Talent Experience
+                Talent Acquisition
               </h1>
               <p className="text-[0.5rem] sm:text-[0.6rem] font-bold text-muted-foreground uppercase tracking-widest">
                 HR Intelligence Portal

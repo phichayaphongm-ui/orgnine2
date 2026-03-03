@@ -18,7 +18,7 @@ export default function AppFooter() {
                             />
                             <div className="h-4 w-px bg-border hidden lg:block" />
                             <p className="text-xs text-muted-foreground">
-                                © {new Date().getFullYear()} Talent Experience. All rights reserved.
+                                © {new Date().getFullYear()} Talent Acquisition. All rights reserved.
                             </p>
                         </div>
 

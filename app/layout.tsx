@@ -9,7 +9,7 @@ const kanit = Kanit({
 })
 
 export const metadata: Metadata = {
-  title: "Talent Experience",
+  title: "Talent Acquisition",
   description: "ระบบบริหารจัดการและพัฒนาศักยภาพบุคลากร (HR Technology)",
   robots: "noindex, nofollow",
 }

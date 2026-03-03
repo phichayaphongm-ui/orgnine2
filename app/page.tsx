@@ -171,7 +171,7 @@ export default function Home() {
 
     const ts = pptx.addSlide()
     ts.background = { color: "1e40af" }
-    ts.addText("Talent Experience\nHR Intelligence Portal", {
+    ts.addText("Talent Acquisition\nHR Intelligence Portal", {
       x: 0, y: 1.5, w: "100%", h: 2,
       fontSize: 36, fontFace: "Kanit", color: "FFFFFF", bold: true, align: "center",
     })
